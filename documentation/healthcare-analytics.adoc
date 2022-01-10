@@ -1,0 +1,9 @@
+= Healthcare Analytics
+:img: img
+
+== Load and analyze FDA Adverse Event Reporting System with Neo4j
+
+=== References
+
+* https://en.wikipedia.org/wiki/FDA_Adverse_Event_Reporting_System[FDA Adverse Event Reporting System Wiki^]
+* https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html[FAERS Datasets^]
