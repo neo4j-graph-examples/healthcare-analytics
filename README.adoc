@@ -1,6 +1,6 @@
 = Healthcare Analytics
 :name: Healthcare Analytics
-:long-name: Healthcare Analytics
+:long-name: Performing analytics on healthcare data
 :description: Load and analyze FDA Adverse Event Reporting System with Neo4j
 :img: img
 :model: documentation/img/model.svg
