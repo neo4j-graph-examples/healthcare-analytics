@@ -11,10 +11,10 @@
 Description: _{description}_
 
 .Model
-image::{model}[width=800]
+image::{model}[]
 
 .Example
-image::{example}[width=800]
+image::{example}[]
 
 === References
 
