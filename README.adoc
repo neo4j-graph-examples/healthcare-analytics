@@ -3,8 +3,8 @@
 :long-name: Healthcare Analytics
 :description: Load and analyze FDA Adverse Event Reporting System with Neo4j
 :img: img
-:model: documentation/img/model.PNG
-:example: documentation/img/example.png
+:model: documentation/img/model.svg
+:example: documentation/img/example.svg
 
 == {long-name} Graph Example
 
