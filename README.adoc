@@ -1,12 +1,12 @@
 = Healthcare Analytics
 :name: Healthcare Analytics
-:long-name: Performing analytics on healthcare data
+:long-name: Performing analytics on healthcare data with graph
 :description: Load and analyze FDA Adverse Event Reporting System with Neo4j
 :img: img
 :model: documentation/img/model.svg
 :example: documentation/img/example.svg
 
-== {long-name} Graph Example
+== {long-name}
 
 Description: _{description}_
 
