@@ -2,7 +2,7 @@ Questions - Analytics
 
 - What are the top 5 side effects reported?
 //Top 5 side effects reported
-MATCH (c:Case)-[:HAS_REACTION]->(r:Reaction) RETURN r.description, count(c) ORDER BY count(c) DESC
+MATCH (c:Case)-[:HAS_REACTION]->(r:Reaction) RETURN r.description, count(c) ORDER BY count(c) DESC LIMIT 5
 
 - What are the top 5 drugs reported with side effects? Also fetch the side effects.
 //Top 5 drugs reported with side effects, along with their top 5 side effects in 2019
