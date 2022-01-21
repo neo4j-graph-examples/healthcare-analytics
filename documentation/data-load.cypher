@@ -97,6 +97,7 @@ MERGE (c)-[:RESULTED_IN]->(o)
 
 RETURN count(o);
 
+-------------------------------------------------------------------------------------------------------------------------------
 
 //Load reactions and link them with cases
 LOAD CSV WITH HEADERS FROM "https://gist.githubusercontent.com/chintan196/e6f36dfb8899f1fb7a631e07cac93ffd/raw/f879244ed0159cb591dc0a31c21455f8fb250b02/reaction.csv" AS row
