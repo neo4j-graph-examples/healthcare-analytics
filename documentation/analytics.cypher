@@ -4,7 +4,7 @@ Questions - Analytics
 //Top 5 side effects reported
 MATCH (c:Case)-[:HAS_REACTION]->(r:Reaction) RETURN r.description, count(c) ORDER BY count(c) DESC
 
-- What are the top 5 drugs reported with side effects, along with their top 5 side effects in 2021?
+- What are the top 5 drugs reported with side effects? Also fetch the side effects.
 //Top 5 drugs reported with side effects, along with their top 5 side effects in 2019
 MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]->(d:Drug)
 MATCH (c)-[:HAS_REACTION]-(r:Reaction)
@@ -12,14 +12,14 @@ WITH d.name as drugName, collect(r.description) as sideEffects, count(r.descript
 RETURN drugName, sideEffects[0..5], totalSideEffects ORDER BY totalSideEffects DESC LIMIT 5
 
 
-- What are the manufacturing companies which have most drugs which reported side effects? Company name comes with answer.
+- What are the manufacturing companies which have most drugs which reported side effects? Company names comes with answer.
 //Top 5 manufacturing companies which have most drugs which reported side effects?
 MATCH (m:Manufacturer)-[:REGISTSRED]->(c)-[:HAS_REACTION]->(r)
 WITH m.manufacturerName as company, count(r) as numberOfSideEffects
 RETURN company, numberOfSideEffects ORDER BY numberOfSideEffects DESC LIMIT 5
 
 
-- What are the top 5 drugs from that company with side effects and what are the side effects from those drugs?
+- What are the top 5 drugs from a particular company with side effects? What are the side effects from those drugs?
 //Top 5 drugs from "NOVARTIS" which reported side effects
 MATCH (m:Manufacturer {manufacturerName: "NOVARTIS"})-[:REGISTSRED]->(c)
 MATCH (r:Reaction)<--(c)-[:IS_PRIMARY_SUSPECT]->(d)
