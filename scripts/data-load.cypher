@@ -15,14 +15,14 @@ CREATE INDEX IF NOT EXISTS FOR (n: `Case`) ON n.`reportDate`;
 
 -------------------------------------------------------------------------------------------------------------------------------
 
-//Load counties
+//Load countries
 LOAD CSV WITH HEADERS FROM "https://gist.githubusercontent.com/chintan196/dde7a90d5a00c646a536156b4176dd6a/raw/a965c923eab0143f3725ca37c17b0adc03adf9b8/countries.csv" AS row
 
 // Conditionally create country node, set properties on first create
 MERGE (c:Country { code: row.code })
 ON CREATE SET
 c.name= row.name
-RETURN c
+RETURN c;
 
 -------------------------------------------------------------------------------------------------------------------------------
 
