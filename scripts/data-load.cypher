@@ -1,28 +1,16 @@
 //Schema - add constraints
-CREATE CONSTRAINT IF NOT EXISTS ON (n: `Drug`) ASSERT n.`name` IS UNIQUE;
-CREATE CONSTRAINT IF NOT EXISTS ON (n: `Case`) ASSERT n.`primaryid` IS UNIQUE;
-CREATE CONSTRAINT IF NOT EXISTS ON (n: `Reaction`) ASSERT n.`description` IS UNIQUE;
-CREATE CONSTRAINT IF NOT EXISTS ON (n: `ReportSource`) ASSERT n.`code` IS UNIQUE;
-CREATE CONSTRAINT IF NOT EXISTS ON (n: `Outcome`) ASSERT n.`code` IS UNIQUE;
-CREATE CONSTRAINT IF NOT EXISTS ON (n: `Therapy`) ASSERT n.`primaryid` IS UNIQUE;
-CREATE CONSTRAINT IF NOT EXISTS ON (n: `Manufacturer`) ASSERT n.`manufacturerName` IS UNIQUE;
-CREATE CONSTRAINT IF NOT EXISTS ON (n: `Country`) ASSERT n.`code` IS UNIQUE;;
-CREATE INDEX IF NOT EXISTS FOR (n: `Case`) ON n.`age`;
-CREATE INDEX IF NOT EXISTS FOR (n: `Case`) ON n.`ageUnit`;
-CREATE INDEX IF NOT EXISTS FOR (n: `Case`) ON n.`gender`;
-CREATE INDEX IF NOT EXISTS FOR (n: `Case`) ON n.`eventDate`;
-CREATE INDEX IF NOT EXISTS FOR (n: `Case`) ON n.`reportDate`;
-
--------------------------------------------------------------------------------------------------------------------------------
-
-//Load countries
-LOAD CSV WITH HEADERS FROM "https://gist.githubusercontent.com/chintan196/dde7a90d5a00c646a536156b4176dd6a/raw/a965c923eab0143f3725ca37c17b0adc03adf9b8/countries.csv" AS row
-
-// Conditionally create country node, set properties on first create
-MERGE (c:Country { code: row.code })
-ON CREATE SET
-c.name= row.name
-RETURN c;
+CREATE CONSTRAINT constraint_drug_name IF NOT EXISTS ON (n: `Drug`) ASSERT n.`name` IS UNIQUE;
+CREATE CONSTRAINT constraint_case_primaryid IF NOT EXISTS ON (n: `Case`) ASSERT n.`primaryid` IS UNIQUE;
+CREATE CONSTRAINT constraint_reaction_description IF NOT EXISTS ON (n: `Reaction`) ASSERT n.`description` IS UNIQUE;
+CREATE CONSTRAINT constraint_reportsource_code IF NOT EXISTS ON (n: `ReportSource`) ASSERT n.`code` IS UNIQUE;
+CREATE CONSTRAINT constraint_outcome_code IF NOT EXISTS ON (n: `Outcome`) ASSERT n.`code` IS UNIQUE;
+CREATE CONSTRAINT constraint_therapy_primaryid IF NOT EXISTS ON (n: `Therapy`) ASSERT n.`primaryid` IS UNIQUE;
+CREATE CONSTRAINT constraint_manufacturer_name IF NOT EXISTS ON (n: `Manufacturer`) ASSERT n.`manufacturerName` IS UNIQUE;
+CREATE INDEX index_case_age IF NOT EXISTS FOR (n: `Case`) ON n.`age`;
+CREATE INDEX index_case_ageUnit IF NOT EXISTS FOR (n: `Case`) ON n.`ageUnit`;
+CREATE INDEX index_case_gender IF NOT EXISTS FOR (n: `Case`) ON n.`gender`;
+CREATE INDEX index_case_eventdate IF NOT EXISTS FOR (n: `Case`) ON n.`eventDate`;
+CREATE INDEX index_case_reportdate IF NOT EXISTS FOR (n: `Case`) ON n.`reportDate`;
 
 -------------------------------------------------------------------------------------------------------------------------------
 
@@ -41,34 +29,14 @@ c.ageUnit = row.ageUnit,
 c.gender = row.sex,
 c.reporterOccupation = row.reporterOccupation
 
-WITH c, row
-
 //Conditionally create Manufacturer
 MERGE (m:Manufacturer { manufacturerName: row.manufacturerName } )
-
-WITH c, m, row
 
 //Relate case and manufacturer
 MERGE (m)-[:REGISTSRED]->(c)
 
-WITH c, row
-
-//Match occured in country, and relate
-MATCH (oc:Country { code: row.occuredIn })
-MERGE (oc)<-[:OCCURED_IN]-(c)
-
-WITH c, row
-
-//Match reported in country, and relate
-MATCH (rc:Country { code: row.reportedIn })
-MERGE (rc)<-[:REPORTED_IN]-(c)
-
-WITH c, row
-
 //Conditionally create age group node and relate with case
 MERGE (a:AgeGroup { ageGroup: row.ageGroup })
-
-WITH c, a
 
 //Relate case with age group
 MERGE (c)-[:FALLS_UNDER]->(a)
@@ -90,8 +58,6 @@ WITH o, row
 // Find the case to relate this outcome to
 MATCH (c:Case {primaryid: toInteger(row.primaryid)})
 
-WITH c, o
-
 // Relate
 MERGE (c)-[:RESULTED_IN]->(o)
 
@@ -110,8 +76,6 @@ WITH r, row
 //Find the case to relate this reaction to
 MATCH (c:Case {primaryid: toInteger(row.primaryid)})
 
-WITH c, r
-
 //Relate
 MERGE (c)-[:HAS_REACTION]->(r)
 
@@ -121,6 +85,7 @@ RETURN count(r);
 
 //Load report sources and link them with cases
 LOAD CSV WITH HEADERS FROM "https://gist.githubusercontent.com/chintan196/0645a2ec35d83dae73b82823d5434f40/raw/f8e0af63bef793e7339d0244bcb54fad229ae112/reportSources.csv" AS row
+
 // Conditionally create reportSource node
 MERGE (r:ReportSource { code: row.code })
 ON CREATE SET
@@ -138,6 +103,7 @@ MERGE (c)-[:REPORTED_BY]->(r)
 
 RETURN count(r);
 
+
 -------------------------------------------------------------------------------------------------------------------------------
 
 //Load  drugs with indications and link them with cases using relationships based on their roles for the cases
@@ -152,8 +118,6 @@ WITH d, row
 
 //Find the case to relate this outcome to
 MATCH (c:Case {primaryid: toInteger(row.primaryid)})
-
-WITH d, c, row
 
 FOREACH (_ IN CASE WHEN row.role = "Primary Suspect" THEN [1] ELSE [] END |
 //Relate
@@ -188,8 +152,6 @@ WITH t, row
 //Find the case to relate this outcome to
 MATCH (c:Case {primaryid: toInteger(row.primaryid)})
 
-WITH c, t, row
-
 //Relate case with therapy
 MERGE (c)-[:RECEIVED]->(t)
 
@@ -200,3 +162,5 @@ MATCH (d:Drug { name: row.drugName })
 
 //Relate therapy and drugs
 MERGE (t)-[:PRESCRIBED { drugSequence: row.drugSequence, startYear: coalesce(row.startYear, 1900), endYear: coalesce(row.endYear, 2021) } ]->(d);
+------------------------------------------------------------------------------------------------------------------------------------
+

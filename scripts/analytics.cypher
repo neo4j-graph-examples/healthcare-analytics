@@ -10,7 +10,7 @@ LIMIT 5;
 
 //- What are the top 5 drugs reported with side effects? Also fetch the side effects.
 
-//Top 5 drugs reported with side effects, along with their top 5 side effects in 2019
+//Top 5 drugs reported with side effects, along with their top 5 side effects
 MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]->(d:Drug)
 MATCH (c)-[:HAS_REACTION]-(r:Reaction)
 WITH d.name as drugName, collect(r.description) as sideEffects, count(r.description) as totalSideEffects
@@ -20,7 +20,7 @@ ORDER BY totalSideEffects DESC LIMIT 5;
 
 // - What are the manufacturing companies which have most drugs which reported side effects? Company names comes with answer.
 //Top 5 manufacturing companies which have most drugs which reported side effects?
-MATCH (m:Manufacturer)-[:REGISTSRED]->(c)-[:HAS_REACTION]->(r)
+MATCH (m:Manufacturer)-[:REGISTERED]->(c)-[:HAS_REACTION]->(r)
 WITH m.manufacturerName as company, count(r) as numberOfSideEffects
 RETURN company, numberOfSideEffects 
 ORDER BY numberOfSideEffects DESC LIMIT 5;
@@ -28,7 +28,7 @@ ORDER BY numberOfSideEffects DESC LIMIT 5;
 
 // - What are the top 5 drugs from a particular company with side effects? What are the side effects from those drugs?
 //Top 5 drugs from "NOVARTIS" which reported side effects
-MATCH (m:Manufacturer {manufacturerName: "NOVARTIS"})-[:REGISTSRED]->(c)
+MATCH (m:Manufacturer {manufacturerName: "NOVARTIS"})-[:REGISTERED]->(c)
 MATCH (r:Reaction)<--(c)-[:IS_PRIMARY_SUSPECT]->(d)
 WITH d,collect(distinct r.description) AS reactions, count(r) as totalReactions
 RETURN DISTINCT(d.name) as drug, reactions[0..5] as sideEffects, totalReactions 
@@ -49,10 +49,9 @@ LIMIT 1;
 MATCH (a:AgeGroup {ageGroup:"Child"})<-[:FALLS_UNDER]-(c)
 MATCH (c)-[:HAS_REACTION]->(r)
 MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
-WITH distinct r.description as sideEffect, d.name as drug, count(d) as sideEffectCount
-RETURN sideEffect, drug 
-ORDER BY sideEffectCount DESC LIMIT 5;
-
+WITH distinct r.description as sideEffect, collect(d.name) as drugs, count(r) as sideEffectCount
+RETURN sideEffect, drugs 
+ORDER BY sideEffectCount desc LIMIT 5;
 
 
 // - What are the top 10 drugs which are reported directly by consumers for the side efffects?
@@ -75,11 +74,10 @@ LIMIT 5;
 
 // - Take one of the case, and list demographics, all the drugs given, side effects and outcome for the patient.
 //Take one of the case, and list demographics, all the drugs given, side effects and outcome for the patient
-MATCH (c:Case {primaryid: 104291946})
+MATCH (c:Case {primaryid: 111791005})
 MATCH (c)-[consumed]->(drug:Drug)
 MATCH (c)-[:RESULTED_IN]->(outcome)
 MATCH (c)-[:HAS_REACTION]->(reaction)
-MATCH (c)-[:OCCURED_IN]->(country)
 MATCH (therapy)-[prescribed:PRESCRIBED]-(drug)
 WITH distinct c.age + ' ' + c.ageUnit as age, c.gender as gender,
 collect(distinct reaction.description) as sideEffects,
@@ -89,7 +87,5 @@ collect(
         indication: consumed.indication,
         route: consumed.route
     }) as treatment,
-outcome.outcome as outcome,
-country.name as country
-RETURN age, gender, country, treatment, sideEffects, outcome ;
-
+collect(distinct outcome.outcome) as outcomes
+RETURN age, gender, treatment, sideEffects, outcomes ;
