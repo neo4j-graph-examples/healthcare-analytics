@@ -1,0 +1,612 @@
+<style type="text/css" media="screen">
+/*
+.nodes-image {
+	margin:-100;
+}
+*/	
+@import url("//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css");
+
+.imageblock .content img, .image img {max-width: 900px;max-height: 300px;}
+.deck h3, .deck h4 {display: block !important;margin-bottom:8px;margin-top:5px;}
+.listingblock {margin:8px;}
+.pull-bottom {position:relative;bottom:1em;}
+.admonitionblock td.icon [class^="fa icon-"]{font-size:2.5em;text-shadow:1px 1px 2px rgba(0,0,0,.5);cursor:default}
+.admonitionblock td.icon .icon-note:before{content:"\f05a";color:#19407c}
+.admonitionblock td.icon .icon-tip:before{content:"\f0eb";text-shadow:1px 1px 2px rgba(155,155,0,.8);color:#111}
+.admonitionblock td.icon .icon-warning:before{content:"\f071";color:#bf6900}
+.admonitionblock td.icon .icon-caution:before{content:"\f06d";color:#bf3400}
+.admonitionblock td.icon .icon-important:before{content:"\f06a";color:#bf0000}
+.admonitionblock.note.speaker { display:none; }
+</style>
+<style type="text/css" media="screen">
+/* #editor.maximize-editor .CodeMirror-code { font-size:24px; line-height:26px; } */
+</style>
+<article class="guide" ng-controller="AdLibDataController">
+  <carousel class="deck container-fluid">
+    <!--slide class="row-fluid">
+      <div class="col-sm-3">
+        <h3>Healthcare Analytics</h3>
+        <p class="lead">Information</p>
+			<!dl>
+				
+				
+				
+				
+				
+			</dl>
+		</div>
+      <div class="col-sm-9">
+        <figure>
+          <img style="width:300px" src=""/>
+        </figure>
+      </div>
+    </slide-->
+    
+
+
+   <h4>Healthcare Analytics</h4>
+   
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Healthcare Analytics - Load and analyse FDA Adverse Event Reporting System Data with Neo4j</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>Health care analytics is the analysis activities that can be undertaken as a result of data collected from four areas within healthcare; claims and cost data, pharmaceutical and research and development (R&amp;D) data, clinical data (collected from electronic medical records (EHRs)), and patient behaviour and sentiment data (patient behaviours and preferences, (retail purchases e.g. data captured in running stores). Health care analytics is a growing industry, expected to grow to even more with time.</p>
+</div>
+<div class="paragraph">
+<p>Health care analytics allows for the examination of patterns in various healthcare data to determine how clinical care can be improved while limiting excessive spending. This can help improve the overall patient care offered in healthcare facilities.</p>
+</div>
+<div class="paragraph">
+<p>Healthcare organizations can “realize new opportunities and efficiencies by leveraging the connections within their existing data: be it in a connected genome, or a provider network, or patient treatments,” said Emil Eifrem, CEO of Neo4j, in one of his statements statement summarizing the graph database company’s traction in the healthcare space. There are many companies in the market who are leveraging the potential of Neo4j Graph Database to unleash the hidden potential of the healthcare data.</p>
+</div>
+<div class="paragraph">
+<p>The connected data capabilities of a graph database can help us achieve what is either impossible or complicated with the traditional relational databases, other NoSQL databases or even big data solutions like Pig and Hive.</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Demo Use Case</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>This demonstration guide covers a similar case of healthcare data analysis with Neo4j. We are performing data ingestion and analytics of the FDA Adverse Event Reporting System Data.
+The FDA Adverse Event Reporting System (FAERS or AERS) is a computerized information database designed to support the U.S. Food and Drug Administration&#8217;s (FDA) post marketing safety surveillance program for all approved drug and therapeutic biologic products.
+The FDA uses FAERS to monitor for new adverse events and medication errors that might occur with these products. It is a system that measures occasional harms from medications to ascertain whether the risk–benefit ratio is high enough to justify continued use of any drug and to identify correctable and preventable problems in health care delivery (such as need for retraining to prevent prescribing errors).</p>
+</div>
+<div class="paragraph">
+<p>Reporting of adverse events from the point of care is voluntary in the United States. The FDA receives some adverse event and medication error reports directly from health care professionals (such as physicians, pharmacists, nurses, and others) and consumers (such as patients, family members, lawyers, and others). Health professionals and consumers may also report these events to the products’ manufacturers.
+If a manufacturer receives an adverse event report, it is required to send the report to the FDA as specified by regulations.</p>
+</div>
+<div class="paragraph">
+<p>We downloaded one of the FDA FAERS datasets, massaged and articulated the demographics for United States. We perform data ingestion to prepare the FAERS graph and run a few example analytics queries to see interesting output.</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Data Model</h3>
+    <br/>
+    <div>
+      <div class="imageblock">
+<div class="content">
+<img src="http://guides.neo4j.com/intro/img/model.svg" alt="model">
+</div>
+<div class="title">Figure 1. Model</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>FAERS Entities : Graph Nodes Explained</h3>
+    <br/>
+    <div>
+      <div class="ulist">
+<ul>
+<li>
+<p>Demographic : Case - This is the demographic information of a person involved in the adverse event report. We identify this entity by the label 'Case' in our graph.</p>
+</li>
+<li>
+<p>Drug : Drug - Drug involved in the adverse event. We use the same label 'Drug'. A drug can be a primary suspect, secondary suspect, concomitant or interacting drug responsible for the adverse effect. This suspect type is identified by the relationship between Case and Drug Nodes.</p>
+</li>
+<li>
+<p>Reaction : Reaction - This is the reaction that the person (Case) developed after consumption of the respective drug, like 'Pain', '	Body temperature increased' or 'Insomnia' or 'Memory Loss' etc. We use the same label for the Node.</p>
+</li>
+<li>
+<p>Outcome : Outcome - This is the long term outcome of the case after the adverse event, for example 'Hospitalization - Initial or Prolonged', 'Disability' or 'Death'</p>
+</li>
+<li>
+<p>Report_Source : ReportSource - This is the reported of the adverse event, for example 'Health Professional', 'Consumer', 'User Health Facility' etc who has reported the event to FDA system. Name of the node label used to identify this entity is 'ReportSource'.</p>
+</li>
+<li>
+<p>Therapy : Therapy - For some cases, they receive drug as a part of a therapy. This is the therapy details for the case. Same node label is used in the graph.</p>
+</li>
+<li>
+<p>Indication : No Node - This is the medical term for drug indication that has the details like drug sequence, indication point. We have not used a separate Node label for this, instead we have covered required details as Case to Drug relationship properties.</p>
+</li>
+<li>
+<p>Age Group Node : Demographics table in the FEARS data has age information. We have used these information and introduced a separate node for Age Group reporting. This is to generate some some age group based statistical data for adverse events.</p>
+</li>
+</ul>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Preparing the schema</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>Create constraints and indexes to prepare the schema (or model) for the graph</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->// Constraints
+CREATE CONSTRAINT constraint_drug_name IF NOT EXISTS ON (n: `Drug`) ASSERT n.`name` IS UNIQUE;
+CREATE CONSTRAINT constraint_case_primaryid IF NOT EXISTS ON (n: `Case`) ASSERT n.`primaryid` IS UNIQUE;
+CREATE CONSTRAINT constraint_reaction_description IF NOT EXISTS ON (n: `Reaction`) ASSERT n.`description` IS UNIQUE;
+CREATE CONSTRAINT constraint_reportsource_code IF NOT EXISTS ON (n: `ReportSource`) ASSERT n.`code` IS UNIQUE;
+CREATE CONSTRAINT constraint_outcome_code IF NOT EXISTS ON (n: `Outcome`) ASSERT n.`code` IS UNIQUE;
+CREATE CONSTRAINT constraint_therapy_primaryid IF NOT EXISTS ON (n: `Therapy`) ASSERT n.`primaryid` IS UNIQUE;
+CREATE CONSTRAINT constraint_manufacturer_name IF NOT EXISTS ON (n: `Manufacturer`) ASSERT n.`manufacturerName` IS UNIQUE;
+
+// indexes
+CREATE INDEX index_case_age IF NOT EXISTS FOR (n: `Case`) ON (n.`age`);
+CREATE INDEX index_case_ageUnit IF NOT EXISTS FOR (n: `Case`) ON (n.`ageUnit`);
+CREATE INDEX index_case_gender IF NOT EXISTS FOR (n: `Case`) ON (n.`gender`);
+CREATE INDEX index_case_eventdate IF NOT EXISTS FOR (n: `Case`) ON (n.`eventDate`);
+CREATE INDEX index_case_reportdate IF NOT EXISTS FOR (n: `Case`) ON (n.`reportDate`);<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Load cases, manufacturers and relate them</h3>
+    <br/>
+    <div>
+      <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///demographics.csv" AS row
+
+//Conditionally create Case nodes, set properties on first create
+MERGE (c:Case { primaryid: toInteger(row.primaryid) })
+ON CREATE SET
+c.eventDate= date(row.eventDate),
+c.reportDate= date(row.reportDate),
+c.age = toFloat(row.age),
+c.ageUnit = row.ageUnit,
+c.gender = row.sex,
+c.reporterOccupation = row.reporterOccupation
+
+//Conditionally create Manufacturer
+MERGE (m:Manufacturer { manufacturerName: row.manufacturerName } )
+
+//Relate case and manufacturer
+MERGE (m)-[:REGISTERED]-&gt;(c)
+
+//Conditionally create age group node and relate with case
+MERGE (a:AgeGroup { ageGroup: row.ageGroup })
+
+//Relate case with age group
+MERGE (c)-[:FALLS_UNDER]-&gt;(a)
+
+RETURN count (c);<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Load other information related to the events</h3>
+    <br/>
+    <div>
+      
+
+
+   <h4>Load outcomes and link them with cases</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///outcome.csv" AS row
+
+// Conditionally create outcome node
+MERGE (o:Outcome { code: row.code })
+ON CREATE SET
+o.outcome = row.outcome
+
+WITH o, row
+
+// Find the case to relate this outcome to
+MATCH (c:Case {primaryid: toInteger(row.primaryid)})
+
+// Relate
+MERGE (c)-[:RESULTED_IN]-&gt;(o)
+
+RETURN count(o);<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>Load reactions and link them with cases</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///reaction.csv" AS row
+
+//Conditionally create reaction node
+MERGE (r:Reaction { description: row.description })
+
+WITH r, row
+
+//Find the case to relate this reaction to
+MATCH (c:Case {primaryid: toInteger(row.primaryid)})
+
+//Relate
+MERGE (c)-[:HAS_REACTION]-&gt;(r)
+
+RETURN count(r);<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>Load report sources and link them with cases</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///reportSources.csv" AS row
+
+// Conditionally create reportSource node
+MERGE (r:ReportSource { code: row.code })
+ON CREATE SET
+r.name = row.name
+
+WITH r, row
+
+// Find the case to relate this report source to
+MATCH (c:Case {primaryid: toInteger(row.primaryid) })
+
+WITH c, r
+
+// Relate
+MERGE (c)-[:REPORTED_BY]-&gt;(r)
+
+RETURN count(r);<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Load drugs and therapies</h3>
+    <br/>
+    <div>
+      
+
+
+   <h4>Load drugs with indications and link them with cases using relationships based on their roles for the cases</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->:auto USING PERIODIC COMMIT 5000 LOAD CSV WITH HEADERS FROM "file:///drugs-indication.csv" AS row
+
+//Conditionally create Drug node
+MERGE (d:Drug { name: row.name })
+ON CREATE SET
+d.primarySubstabce = row.primarySubstabce
+
+WITH d, row
+
+//Find the case to relate this drug based on the suspect type
+MATCH (c:Case {primaryid: toInteger(row.primaryid)})
+
+FOREACH (_ IN CASE WHEN row.role = "Primary Suspect" THEN [1] ELSE [] END |
+//Relate
+MERGE (c)-[relate:IS_PRIMARY_SUSPECT { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]-&gt;(d)
+)
+
+FOREACH (_ IN CASE WHEN row.role = "Secondary Suspect" THEN [1] ELSE [] END |
+//Relate
+MERGE (c)-[relate:IS_SECONDARY_SUSPECT { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]-&gt;(d)
+)
+
+FOREACH (_ IN CASE WHEN row.role = "Concomitant" THEN [1] ELSE [] END |
+//Relate
+MERGE (c)-[relate:IS_CONCOMITANT { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]-&gt;(d)
+)
+
+FOREACH (_ IN CASE WHEN row.role = "Interacting" THEN [1] ELSE [] END |
+//Relate
+MERGE (c)-[relate:IS_INTERACTING { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]-&gt;(d)
+);<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>Load therapies and link them with cases and drugs</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///therapy.csv" AS row
+
+//Conditionally create therapy node
+MERGE (t:Therapy { primaryid: toInteger(row.primaryid) })
+
+WITH t, row
+
+//Find the case to relate this therapy to
+MATCH (c:Case {primaryid: toInteger(row.primaryid)})
+
+//Relate case with therapy
+MERGE (c)-[:RECEIVED]-&gt;(t)
+
+WITH c, t, row
+
+//Find drugs prescribed in the therapy
+MATCH (d:Drug { name: row.drugName })
+
+//Relate therapy and drugs
+MERGE (t)-[:PRESCRIBED { drugSequence: row.drugSequence, startYear: coalesce(row.startYear, 1900), endYear: coalesce(row.endYear, 2021) } ]-&gt;(d);<!--/code--></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We have loaded the data. Now we will be performing some analytics queries on the data.</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Performing data analytics</h3>
+    <br/>
+    <div>
+      
+
+
+   <h4>What are the top 5 side effects reported?</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (c:Case)-[:HAS_REACTION]-&gt;(r:Reaction)
+RETURN r.description, count(c)
+ORDER BY count(c) DESC
+LIMIT 5;<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>What are the top 5 drugs reported with side effects? Get drugs along with their side effects.</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]-&gt;(d:Drug)
+MATCH (c)-[:HAS_REACTION]-(r:Reaction)
+WITH d.name as drugName, collect(r.description) as sideEffects, count(r.description) as totalSideEffects
+RETURN drugName, sideEffects[0..5], totalSideEffects
+ORDER BY totalSideEffects DESC LIMIT 5;<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>What are the manufacturing companies which have most drugs which reported side effects?</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (m:Manufacturer)-[:REGISTERED]-&gt;(c)-[:HAS_REACTION]-&gt;(r)
+WITH m.manufacturerName as company, count(r) as numberOfSideEffects
+RETURN company, numberOfSideEffects
+ORDER BY numberOfSideEffects DESC LIMIT 5;<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>What are the top 5 drugs from a particular company with side effects? What are the side effects from those drugs?</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (m:Manufacturer {manufacturerName: "NOVARTIS"})-[:REGISTERED]-&gt;(c)
+MATCH (r:Reaction)&lt;--(c)-[:IS_PRIMARY_SUSPECT]-&gt;(d)
+WITH d,collect(distinct r.description) AS reactions, count(r) as totalReactions
+RETURN DISTINCT(d.name) as drug, reactions[0..5] as sideEffects, totalReactions
+ORDER BY totalReactions DESC
+LIMIT 5;<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>What are the top 5 drugs which are reported directly by consumers for the side effects?</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (c:Case)-[:REPORTED_BY]-&gt;(rpsr:ReportSource {name: "Consumer"})
+MATCH (c)-[:IS_PRIMARY_SUSPECT]-&gt;(d)
+MATCH (c)-[:HAS_REACTION]-&gt;(r)
+WITH rpsr.name as reporter, d.name as drug, collect(r.description) as sideEffects, count(r) as total
+RETURN drug, reporter, sideEffects[0..5] as sideEffects
+ORDER BY total desc LIMIT 5;<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>What are the top 5 drugs whose side effects resulted in Death of patients as an outcome?</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (c:Case)-[:RESULTED_IN]-&gt;(o:Outcome {outcome:"Death"})
+MATCH (c)-[:IS_PRIMARY_SUSPECT]-&gt;(d)
+MATCH (c)-[:HAS_REACTION]-&gt;(r)
+WITH d.name as drug, collect(r.description) as sideEffects, o.outcome as outcome
+RETURN drug, sideEffects[0..5] as sideEffects, outcome
+LIMIT 5;<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>Take one of the case, and list demographics, all the drugs given, side effects and outcome for the patient.</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (c:Case {primaryid: 111791005})
+MATCH (c)-[consumed]-&gt;(drug:Drug)
+MATCH (c)-[:RESULTED_IN]-&gt;(outcome)
+MATCH (c)-[:HAS_REACTION]-&gt;(reaction)
+MATCH (therapy)-[prescribed:PRESCRIBED]-(drug)
+WITH distinct c.age + ' ' + c.ageUnit as age, c.gender as gender,
+collect(distinct reaction.description) as sideEffects,
+collect(
+    distinct {   drug: drug.name,
+        dose: consumed.doseAmount + ' '  + consumed.doseUnit,
+        indication: consumed.indication,
+        route: consumed.route
+    }) as treatment,
+collect(distinct outcome.outcome) as outcomes
+RETURN age, gender, treatment, sideEffects, outcomes ;<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Perform some more statistical analysis</h3>
+    <br/>
+    <div>
+      
+
+
+   <h4>What is the age group which reported highest side effects, and what are those side effects?</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (a:AgeGroup)&lt;-[:FALLS_UNDER]-(c:Case)
+MATCH (c)-[:HAS_REACTION]-&gt;(r)
+WITH a, collect(r.description) as sideEffects, count(r) as total
+RETURN a.ageGroup as ageGroupName, sideEffects[0..6] as sideEffects
+ORDER BY total DESC
+LIMIT 1;<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>What are the highest side effects reported in Children and what are the drugs those caused these side effects?</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (a:AgeGroup {ageGroup:"Child"})&lt;-[:FALLS_UNDER]-(c)
+MATCH (c)-[:HAS_REACTION]-&gt;(r)
+MATCH (c)-[:IS_PRIMARY_SUSPECT]-&gt;(d)
+WITH distinct r.description as sideEffect, collect(distinct d.name) as drugs, count(r) as sideEffectCount
+RETURN sideEffect, drugs
+ORDER BY sideEffectCount desc LIMIT 5;<!--/code--></pre>
+</div>
+</div>
+
+
+
+   <h4>What is the percentage wise allocation of side effects for each age group?</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (c:Case)-[:HAS_REACTION]-&gt;(r)
+WITH count(r) as totalReactions
+MATCH (a:AgeGroup)&lt;-[:FALLS_UNDER]-(c)-[:HAS_REACTION]-&gt;(r)
+WITH a, count(r) as ageGroupWiseReactions, totalReactions
+RETURN a.ageGroup as ageGroupName, (ageGroupWiseReactions*100.00)/totalReactions as perc
+ORDER BY perc DESC<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Next steps</h3>
+    <br/>
+    <div>
+      
+
+
+   <h4>Full Source Code Available on GIT</h4>
+   <div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/neo4j-graph-examples/healthcare-analytics" target="_blank">Source Code with Cypher and data dumps</a></p>
+</li>
+</ul>
+</div>
+<br>
+
+
+
+   <h4>More code</h4>
+   <div class="ulist">
+<ul>
+<li>
+<p><a play-topic="movie-graph">Movie Graph</a> - actors & movies</p>
+</li>
+<li>
+<p><a play-topic="cypher">Cypher</a> - query language fundamentals</p>
+</li>
+</ul>
+</div>
+<br>
+
+
+
+   <h4>References</h4>
+   <div class="ulist">
+<ul>
+<li>
+<p><a href="https://en.wikipedia.org/wiki/Health_care_analytics" target="_blank">Healthcare Analytics</a></p>
+</li>
+<li>
+<p><a href="https://neo4j.com/news/graph-databases-impact-healthcare-sector/" target="_blank">Graph Databases have Impact on HealthCare Sector</a></p>
+</li>
+<li>
+<p><a href="https://en.wikipedia.org/wiki/FDA_Adverse_Event_Reporting_System" target="_blank">FDA Adverse Event Reporting System Wiki</a></p>
+</li>
+<li>
+<p><a href="https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html" target="_blank">FAERS Datasets</a></p>
+</li>
+</ul>
+</div>
+	</div>
+  </div>
+</slide>
+  </carousel>
+</article>

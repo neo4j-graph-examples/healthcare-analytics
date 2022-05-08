@@ -1,9 +1,390 @@
 = Healthcare Analytics
+:author: Chintan Desai, Neo4j
+:twitter: neo4j
+:tags: Healthcare, Analytics, FDA, FAERS, Adverse, Events, Reporting, System
+:neo4j-version: 4.4.6
+:icon: font
 :img: img
+:dump: https://github.com/neo4j-graph-examples/healthcare-analytics/tree/main/data
+:nodes: 11381
+:relationships: 61453
 
-== Load and analyze FDA Adverse Event Reporting System with Neo4j
+== Healthcare Analytics - Load and analyse FDA Adverse Event Reporting System Data with Neo4j
+
+Health care analytics is the analysis activities that can be undertaken as a result of data collected from four areas within healthcare; claims and cost data, pharmaceutical and research and development (R&D) data, clinical data (collected from electronic medical records (EHRs)), and patient behaviour and sentiment data (patient behaviours and preferences, (retail purchases e.g. data captured in running stores). Health care analytics is a growing industry, expected to grow to even more with time.
+
+Health care analytics allows for the examination of patterns in various healthcare data to determine how clinical care can be improved while limiting excessive spending. This can help improve the overall patient care offered in healthcare facilities.
+
+Healthcare organizations can “realize new opportunities and efficiencies by leveraging the connections within their existing data: be it in a connected genome, or a provider network, or patient treatments,” said Emil Eifrem, CEO of Neo4j, in one of his statements statement summarizing the graph database company’s traction in the healthcare space. There are many companies in the market who are leveraging the potential of Neo4j Graph Database to unleash the hidden potential of the healthcare data. 
+
+The connected data capabilities of a graph database can help us achieve what is either impossible or complicated with the traditional relational databases, other NoSQL databases or even big data solutions like Pig and Hive.
+
+== Demo Use Case
+
+This demonstration guide covers a similar case of healthcare data analysis with Neo4j. We are performing data ingestion and analytics of the FDA Adverse Event Reporting System Data. 
+The FDA Adverse Event Reporting System (FAERS or AERS) is a computerized information database designed to support the U.S. Food and Drug Administration's (FDA) post marketing safety surveillance program for all approved drug and therapeutic biologic products. 
+The FDA uses FAERS to monitor for new adverse events and medication errors that might occur with these products. It is a system that measures occasional harms from medications to ascertain whether the risk–benefit ratio is high enough to justify continued use of any drug and to identify correctable and preventable problems in health care delivery (such as need for retraining to prevent prescribing errors).
+
+Reporting of adverse events from the point of care is voluntary in the United States. The FDA receives some adverse event and medication error reports directly from health care professionals (such as physicians, pharmacists, nurses, and others) and consumers (such as patients, family members, lawyers, and others). Health professionals and consumers may also report these events to the products’ manufacturers.
+If a manufacturer receives an adverse event report, it is required to send the report to the FDA as specified by regulations. 
+
+We downloaded one of the FDA FAERS datasets, massaged and articulated the demographics for United States. We perform data ingestion to prepare the FAERS graph and run a few example analytics queries to see interesting output.
+
+== Data Model
+
+.Model
+image::{img}/model.svg[]
+
+== FAERS Entities : Graph Nodes Explained
+* Demographic : Case - This is the demographic information of a person involved in the adverse event report. We identify this entity by the label 'Case' in our graph.
+* Drug : Drug - Drug involved in the adverse event. We use the same label 'Drug'. A drug can be a primary suspect, secondary suspect, concomitant or interacting drug responsible for the adverse effect. This suspect type is identified by the relationship between Case and Drug Nodes.
+* Reaction : Reaction - This is the reaction that the person (Case) developed after consumption of the respective drug, like 'Pain', '	Body temperature increased' or 'Insomnia' or 'Memory Loss' etc. We use the same label for the Node.
+* Outcome : Outcome - This is the long term outcome of the case after the adverse event, for example 'Hospitalization - Initial or Prolonged', 'Disability' or 'Death'
+* Report_Source : ReportSource - This is the reported of the adverse event, for example 'Health Professional', 'Consumer', 'User Health Facility' etc who has reported the event to FDA system. Name of the node label used to identify this entity is 'ReportSource'.
+* Therapy : Therapy - For some cases, they receive drug as a part of a therapy. This is the therapy details for the case. Same node label is used in the graph.
+* Indication : No Node - This is the medical term for drug indication that has the details like drug sequence, indication point. We have not used a separate Node label for this, instead we have covered required details as Case to Drug relationship properties.
+* Age Group Node : Demographics table in the FEARS data has age information. We have used these information and introduced a separate node for Age Group reporting. This is to generate some some age group based statistical data for adverse events.
+
+== Preparing the schema
+
+Create constraints and indexes to prepare the schema (or model) for the graph
+
+[source,cypher]
+----
+// Constraints
+CREATE CONSTRAINT constraint_drug_name IF NOT EXISTS ON (n: `Drug`) ASSERT n.`name` IS UNIQUE;
+CREATE CONSTRAINT constraint_case_primaryid IF NOT EXISTS ON (n: `Case`) ASSERT n.`primaryid` IS UNIQUE;
+CREATE CONSTRAINT constraint_reaction_description IF NOT EXISTS ON (n: `Reaction`) ASSERT n.`description` IS UNIQUE;
+CREATE CONSTRAINT constraint_reportsource_code IF NOT EXISTS ON (n: `ReportSource`) ASSERT n.`code` IS UNIQUE;
+CREATE CONSTRAINT constraint_outcome_code IF NOT EXISTS ON (n: `Outcome`) ASSERT n.`code` IS UNIQUE;
+CREATE CONSTRAINT constraint_therapy_primaryid IF NOT EXISTS ON (n: `Therapy`) ASSERT n.`primaryid` IS UNIQUE;
+CREATE CONSTRAINT constraint_manufacturer_name IF NOT EXISTS ON (n: `Manufacturer`) ASSERT n.`manufacturerName` IS UNIQUE;
+
+// indexes
+CREATE INDEX index_case_age IF NOT EXISTS FOR (n: `Case`) ON (n.`age`);
+CREATE INDEX index_case_ageUnit IF NOT EXISTS FOR (n: `Case`) ON (n.`ageUnit`);
+CREATE INDEX index_case_gender IF NOT EXISTS FOR (n: `Case`) ON (n.`gender`);
+CREATE INDEX index_case_eventdate IF NOT EXISTS FOR (n: `Case`) ON (n.`eventDate`);
+CREATE INDEX index_case_reportdate IF NOT EXISTS FOR (n: `Case`) ON (n.`reportDate`);
+
+----
+
+== Load cases, manufacturers and relate them
+
+[source,cypher]
+----
+LOAD CSV WITH HEADERS FROM "file:///demographics.csv" AS row
+
+//Conditionally create Case nodes, set properties on first create
+MERGE (c:Case { primaryid: toInteger(row.primaryid) })
+ON CREATE SET
+c.eventDate= date(row.eventDate),
+c.reportDate= date(row.reportDate),
+c.age = toFloat(row.age),
+c.ageUnit = row.ageUnit,
+c.gender = row.sex,
+c.reporterOccupation = row.reporterOccupation
+
+//Conditionally create Manufacturer
+MERGE (m:Manufacturer { manufacturerName: row.manufacturerName } )
+
+//Relate case and manufacturer
+MERGE (m)-[:REGISTERED]->(c)
+
+//Conditionally create age group node and relate with case
+MERGE (a:AgeGroup { ageGroup: row.ageGroup })
+
+//Relate case with age group
+MERGE (c)-[:FALLS_UNDER]->(a)
+
+RETURN count (c);
+----
+
+== Load other information related to the events
+
+=== Load outcomes and link them with cases
+
+[source,cypher]
+----
+LOAD CSV WITH HEADERS FROM "file:///outcome.csv" AS row
+
+// Conditionally create outcome node
+MERGE (o:Outcome { code: row.code })
+ON CREATE SET
+o.outcome = row.outcome
+
+WITH o, row
+
+// Find the case to relate this outcome to
+MATCH (c:Case {primaryid: toInteger(row.primaryid)})
+
+// Relate
+MERGE (c)-[:RESULTED_IN]->(o)
+
+RETURN count(o);
+----
+
+=== Load reactions and link them with cases
+
+[source,cypher]
+----
+LOAD CSV WITH HEADERS FROM "file:///reaction.csv" AS row
+
+//Conditionally create reaction node
+MERGE (r:Reaction { description: row.description })
+
+WITH r, row
+
+//Find the case to relate this reaction to
+MATCH (c:Case {primaryid: toInteger(row.primaryid)})
+
+//Relate
+MERGE (c)-[:HAS_REACTION]->(r)
+
+RETURN count(r);
+----
+
+=== Load report sources and link them with cases
+
+[source,cypher]
+----
+LOAD CSV WITH HEADERS FROM "file:///reportSources.csv" AS row
+
+// Conditionally create reportSource node
+MERGE (r:ReportSource { code: row.code })
+ON CREATE SET
+r.name = row.name
+
+WITH r, row
+
+// Find the case to relate this report source to
+MATCH (c:Case {primaryid: toInteger(row.primaryid) })
+
+WITH c, r
+
+// Relate
+MERGE (c)-[:REPORTED_BY]->(r)
+
+RETURN count(r);
+----
+
+== Load drugs and therapies
+
+=== Load drugs with indications and link them with cases using relationships based on their roles for the cases
+
+[source,cypher]
+----
+:auto USING PERIODIC COMMIT 5000 LOAD CSV WITH HEADERS FROM "file:///drugs-indication.csv" AS row
+
+//Conditionally create Drug node
+MERGE (d:Drug { name: row.name })
+ON CREATE SET
+d.primarySubstabce = row.primarySubstabce
+
+WITH d, row
+
+//Find the case to relate this drug based on the suspect type
+MATCH (c:Case {primaryid: toInteger(row.primaryid)})
+
+FOREACH (_ IN CASE WHEN row.role = "Primary Suspect" THEN [1] ELSE [] END |
+//Relate
+MERGE (c)-[relate:IS_PRIMARY_SUSPECT { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]->(d)
+)
+
+FOREACH (_ IN CASE WHEN row.role = "Secondary Suspect" THEN [1] ELSE [] END |
+//Relate
+MERGE (c)-[relate:IS_SECONDARY_SUSPECT { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]->(d)
+)
+
+FOREACH (_ IN CASE WHEN row.role = "Concomitant" THEN [1] ELSE [] END |
+//Relate
+MERGE (c)-[relate:IS_CONCOMITANT { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]->(d)
+)
+
+FOREACH (_ IN CASE WHEN row.role = "Interacting" THEN [1] ELSE [] END |
+//Relate
+MERGE (c)-[relate:IS_INTERACTING { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]->(d)
+);
+----
+
+=== Load therapies and link them with cases and drugs
+
+[source,cypher]
+----
+LOAD CSV WITH HEADERS FROM "file:///therapy.csv" AS row
+
+//Conditionally create therapy node
+MERGE (t:Therapy { primaryid: toInteger(row.primaryid) })
+
+WITH t, row
+
+//Find the case to relate this therapy to
+MATCH (c:Case {primaryid: toInteger(row.primaryid)})
+
+//Relate case with therapy
+MERGE (c)-[:RECEIVED]->(t)
+
+WITH c, t, row
+
+//Find drugs prescribed in the therapy
+MATCH (d:Drug { name: row.drugName })
+
+//Relate therapy and drugs
+MERGE (t)-[:PRESCRIBED { drugSequence: row.drugSequence, startYear: coalesce(row.startYear, 1900), endYear: coalesce(row.endYear, 2021) } ]->(d);
+----
+
+We have loaded the data. Now we will be performing some analytics queries on the data.
+
+== Performing data analytics
+
+=== What are the top 5 side effects reported?
+
+[source,cypher]
+----
+MATCH (c:Case)-[:HAS_REACTION]->(r:Reaction) 
+RETURN r.description, count(c) 
+ORDER BY count(c) DESC 
+LIMIT 5;
+----
+
+=== What are the top 5 drugs reported with side effects? Get drugs along with their side effects.
+
+[source,cypher]
+----
+MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]->(d:Drug)
+MATCH (c)-[:HAS_REACTION]-(r:Reaction)
+WITH d.name as drugName, collect(r.description) as sideEffects, count(r.description) as totalSideEffects
+RETURN drugName, sideEffects[0..5], totalSideEffects 
+ORDER BY totalSideEffects DESC LIMIT 5;
+----
+
+=== What are the manufacturing companies which have most drugs which reported side effects?
+
+[source,cypher]
+----
+MATCH (m:Manufacturer)-[:REGISTERED]->(c)-[:HAS_REACTION]->(r)
+WITH m.manufacturerName as company, count(r) as numberOfSideEffects
+RETURN company, numberOfSideEffects 
+ORDER BY numberOfSideEffects DESC LIMIT 5;
+----
+
+=== What are the top 5 drugs from a particular company with side effects? What are the side effects from those drugs?
+
+[source,cypher]
+----
+MATCH (m:Manufacturer {manufacturerName: "NOVARTIS"})-[:REGISTERED]->(c)
+MATCH (r:Reaction)<--(c)-[:IS_PRIMARY_SUSPECT]->(d)
+WITH d,collect(distinct r.description) AS reactions, count(r) as totalReactions
+RETURN DISTINCT(d.name) as drug, reactions[0..5] as sideEffects, totalReactions 
+ORDER BY totalReactions DESC
+LIMIT 5;
+----
+
+=== What are the top 5 drugs which are reported directly by consumers for the side effects?
+
+[source,cypher]
+----
+MATCH (c:Case)-[:REPORTED_BY]->(rpsr:ReportSource {name: "Consumer"})
+MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
+MATCH (c)-[:HAS_REACTION]->(r)
+WITH rpsr.name as reporter, d.name as drug, collect(r.description) as sideEffects, count(r) as total
+RETURN drug, reporter, sideEffects[0..5] as sideEffects 
+ORDER BY total desc LIMIT 5;
+----
+
+=== What are the top 5 drugs whose side effects resulted in Death of patients as an outcome?
+
+[source,cypher]
+----
+MATCH (c:Case)-[:RESULTED_IN]->(o:Outcome {outcome:"Death"})
+MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
+MATCH (c)-[:HAS_REACTION]->(r)
+WITH d.name as drug, collect(r.description) as sideEffects, o.outcome as outcome
+RETURN drug, sideEffects[0..5] as sideEffects, outcome 
+LIMIT 5;
+----
+
+=== Take one of the case, and list demographics, all the drugs given, side effects and outcome for the patient.
+
+[source,cypher]
+----
+MATCH (c:Case {primaryid: 111791005})
+MATCH (c)-[consumed]->(drug:Drug)
+MATCH (c)-[:RESULTED_IN]->(outcome)
+MATCH (c)-[:HAS_REACTION]->(reaction)
+MATCH (therapy)-[prescribed:PRESCRIBED]-(drug)
+WITH distinct c.age + ' ' + c.ageUnit as age, c.gender as gender,
+collect(distinct reaction.description) as sideEffects,
+collect(
+    distinct {   drug: drug.name,
+        dose: consumed.doseAmount + ' '  + consumed.doseUnit,
+        indication: consumed.indication,
+        route: consumed.route
+    }) as treatment,
+collect(distinct outcome.outcome) as outcomes
+RETURN age, gender, treatment, sideEffects, outcomes ;
+----
+
+== Perform some more statistical analysis
+
+=== What is the age group which reported highest side effects, and what are those side effects?
+
+[source,cypher]
+----
+MATCH (a:AgeGroup)<-[:FALLS_UNDER]-(c:Case)
+MATCH (c)-[:HAS_REACTION]->(r)
+WITH a, collect(r.description) as sideEffects, count(r) as total
+RETURN a.ageGroup as ageGroupName, sideEffects[0..6] as sideEffects 
+ORDER BY total DESC
+LIMIT 1;
+----
+
+=== What are the highest side effects reported in Children and what are the drugs those caused these side effects?
+
+[source,cypher]
+----
+MATCH (a:AgeGroup {ageGroup:"Child"})<-[:FALLS_UNDER]-(c)
+MATCH (c)-[:HAS_REACTION]->(r)
+MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
+WITH distinct r.description as sideEffect, collect(distinct d.name) as drugs, count(r) as sideEffectCount
+RETURN sideEffect, drugs 
+ORDER BY sideEffectCount desc LIMIT 5;
+----
+
+=== What is the percentage wise allocation of side effects for each age group?
+
+[source,cypher]
+----
+MATCH (c:Case)-[:HAS_REACTION]->(r)
+WITH count(r) as totalReactions
+MATCH (a:AgeGroup)<-[:FALLS_UNDER]-(c)-[:HAS_REACTION]->(r)
+WITH a, count(r) as ageGroupWiseReactions, totalReactions
+RETURN a.ageGroup as ageGroupName, (ageGroupWiseReactions*100.00)/totalReactions as perc
+ORDER BY perc DESC
+----
+
+== Next steps
+
+=== Full Source Code Available on GIT
+
+* https://github.com/neo4j-graph-examples/healthcare-analytics[Source Code with Cypher and data dumps^]
+
+++++
+<br>
+++++
+
+=== More code
+
+* pass:a[<a play-topic="movie-graph">Movie Graph</a> - actors & movies]
+* pass:a[<a play-topic="cypher">Cypher</a> - query language fundamentals]
+
+++++
+<br>
+++++
 
 === References
 
+* https://en.wikipedia.org/wiki/Health_care_analytics[Healthcare Analytics^]
+* https://neo4j.com/news/graph-databases-impact-healthcare-sector/[Graph Databases have Impact on HealthCare Sector^]
 * https://en.wikipedia.org/wiki/FDA_Adverse_Event_Reporting_System[FDA Adverse Event Reporting System Wiki^]
 * https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html[FAERS Datasets^]

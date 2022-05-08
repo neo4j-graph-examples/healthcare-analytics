@@ -54,8 +54,8 @@ RETURN sideEffect, drugs
 ORDER BY sideEffectCount desc LIMIT 5;
 
 
-// - What are the top 10 drugs which are reported directly by consumers for the side efffects?
-//Top 10 drugs which are reported directly by consumers for the side efffects
+// - What are the top 5 drugs which are reported directly by consumers for the side efffects?
+//Top 5 drugs which are reported directly by consumers for the side efffects
 MATCH (c:Case)-[:REPORTED_BY]->(rpsr:ReportSource {name: "Consumer"})
 MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
 MATCH (c)-[:HAS_REACTION]->(r)
