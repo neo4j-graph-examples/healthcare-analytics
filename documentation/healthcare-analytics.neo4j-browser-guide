@@ -417,7 +417,18 @@ RETURN drugName, sideEffects[0..5], totalSideEffects
 ORDER BY totalSideEffects DESC LIMIT 5;<!--/code--></pre>
 </div>
 </div>
+	</div>
+  </div>
+</slide>
 
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Performing data analytics</h3>
+    <br/>
+    <div>
+      
 
 
    <h4>What are the manufacturing companies which have most drugs which reported side effects?</h4>
@@ -443,7 +454,18 @@ ORDER BY totalReactions DESC
 LIMIT 5;<!--/code--></pre>
 </div>
 </div>
+	</div>
+  </div>
+</slide>
 
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Performing data analytics</h3>
+    <br/>
+    <div>
+      
 
 
    <h4>What are the top 5 drugs which are reported directly by consumers for the side effects?</h4>
@@ -469,6 +491,35 @@ MATCH (c)-[:HAS_REACTION]-&gt;(r)
 WITH d.name as drug, collect(r.description) as sideEffects, o.outcome as outcome
 RETURN drug, sideEffects[0..5] as sideEffects, outcome
 LIMIT 5;<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Performing data analytics</h3>
+    <br/>
+    <div>
+      
+
+
+   <h4>Show top 10 drug combinations which have most side effects when consumed together</h4>
+   <div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]-&gt;(d1)
+MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]->(d1)
+MATCH (c:Case)-[:IS_SECONDARY_SUSPECT]->(d2)
+MATCH (c)-[:HAS_REACTION]->(r)
+MATCH (c)-[:RESULTED_IN]->(o)
+WHERE d1<>d2
+WITH d1.name as primaryDrug, d2.name as secondaryDrug,
+collect(r.description) as sideEffects, collect(o.outcome) as outcomes
+RETURN primaryDrug, secondaryDrug, sideEffects[0..3] as sideEffects, outcomes[0]
+LIMIT 10;<!--/code--></pre>
 </div>
 </div>
 
