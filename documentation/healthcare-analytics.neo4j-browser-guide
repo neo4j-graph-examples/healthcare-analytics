@@ -190,7 +190,7 @@ CREATE INDEX index_case_reportdate IF NOT EXISTS FOR (n: `Case`) ON (n.`reportDa
     <div>
       <div class="listingblock">
 <div class="content">
-<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///demographics.csv" AS row
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/demographics.csv" AS row
 
 //Conditionally create Case nodes, set properties on first create
 MERGE (c:Case { primaryid: toInteger(row.primaryid) })
@@ -234,7 +234,7 @@ RETURN count (c);<!--/code--></pre>
    <h4>Load outcomes and link them with cases</h4>
    <div class="listingblock">
 <div class="content">
-<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///outcome.csv" AS row
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/outcome.csv" AS row
 
 // Conditionally create outcome node
 MERGE (o:Outcome { code: row.code })
@@ -258,7 +258,7 @@ RETURN count(o);<!--/code--></pre>
    <h4>Load reactions and link them with cases</h4>
    <div class="listingblock">
 <div class="content">
-<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///reaction.csv" AS row
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/reaction.csv" AS row
 
 //Conditionally create reaction node
 MERGE (r:Reaction { description: row.description })
@@ -280,7 +280,7 @@ RETURN count(r);<!--/code--></pre>
    <h4>Load report sources and link them with cases</h4>
    <div class="listingblock">
 <div class="content">
-<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///reportSources.csv" AS row
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/reportSources.csv" AS row
 
 // Conditionally create reportSource node
 MERGE (r:ReportSource { code: row.code })
@@ -317,7 +317,7 @@ RETURN count(r);<!--/code--></pre>
    <h4>Load drugs with indications and link them with cases using relationships based on their roles for the cases</h4>
    <div class="listingblock">
 <div class="content">
-<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->:auto USING PERIODIC COMMIT 5000 LOAD CSV WITH HEADERS FROM "file:///drugs-indication.csv" AS row
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->:auto USING PERIODIC COMMIT 5000 LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/drugs-indication.csv" AS row
 
 //Conditionally create Drug node
 MERGE (d:Drug { name: row.name })
@@ -356,7 +356,7 @@ MERGE (c)-[relate:IS_INTERACTING { drugSequence: row.drugSequence, route: row.ro
    <h4>Load therapies and link them with cases and drugs</h4>
    <div class="listingblock">
 <div class="content">
-<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "file:///therapy.csv" AS row
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/therapy.csv" AS row
 
 //Conditionally create therapy node
 MERGE (t:Therapy { primaryid: toInteger(row.primaryid) })
@@ -511,11 +511,10 @@ LIMIT 5;<!--/code--></pre>
    <div class="listingblock">
 <div class="content">
 <pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]-&gt;(d1)
-MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]->(d1)
-MATCH (c:Case)-[:IS_SECONDARY_SUSPECT]->(d2)
-MATCH (c)-[:HAS_REACTION]->(r)
-MATCH (c)-[:RESULTED_IN]->(o)
-WHERE d1<>d2
+MATCH (c:Case)-[:IS_SECONDARY_SUSPECT]-&gt;(d2)
+MATCH (c)-[:HAS_REACTION]-&gt;(r)
+MATCH (c)-[:RESULTED_IN]-&gt;(o)
+WHERE d1&lt;&gt;d2
 WITH d1.name as primaryDrug, d2.name as secondaryDrug,
 collect(r.description) as sideEffects, collect(o.outcome) as outcomes
 RETURN primaryDrug, secondaryDrug, sideEffects[0..3] as sideEffects, outcomes[0]

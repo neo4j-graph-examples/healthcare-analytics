@@ -73,7 +73,7 @@ CREATE INDEX index_case_reportdate IF NOT EXISTS FOR (n: `Case`) ON (n.`reportDa
 
 [source,cypher]
 ----
-LOAD CSV WITH HEADERS FROM "file:///demographics.csv" AS row
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/demographics.csv" AS row
 
 //Conditionally create Case nodes, set properties on first create
 MERGE (c:Case { primaryid: toInteger(row.primaryid) })
@@ -106,7 +106,7 @@ RETURN count (c);
 
 [source,cypher]
 ----
-LOAD CSV WITH HEADERS FROM "file:///outcome.csv" AS row
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/outcome.csv" AS row
 
 // Conditionally create outcome node
 MERGE (o:Outcome { code: row.code })
@@ -128,7 +128,7 @@ RETURN count(o);
 
 [source,cypher]
 ----
-LOAD CSV WITH HEADERS FROM "file:///reaction.csv" AS row
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/reaction.csv" AS row
 
 //Conditionally create reaction node
 MERGE (r:Reaction { description: row.description })
@@ -148,7 +148,7 @@ RETURN count(r);
 
 [source,cypher]
 ----
-LOAD CSV WITH HEADERS FROM "file:///reportSources.csv" AS row
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/reportSources.csv" AS row
 
 // Conditionally create reportSource node
 MERGE (r:ReportSource { code: row.code })
@@ -174,7 +174,7 @@ RETURN count(r);
 
 [source,cypher]
 ----
-:auto USING PERIODIC COMMIT 5000 LOAD CSV WITH HEADERS FROM "file:///drugs-indication.csv" AS row
+:auto USING PERIODIC COMMIT 5000 LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/drugs-indication.csv" AS row
 
 //Conditionally create Drug node
 MERGE (d:Drug { name: row.name })
@@ -211,7 +211,7 @@ MERGE (c)-[relate:IS_INTERACTING { drugSequence: row.drugSequence, route: row.ro
 
 [source,cypher]
 ----
-LOAD CSV WITH HEADERS FROM "file:///therapy.csv" AS row
+LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/therapy.csv" AS row
 
 //Conditionally create therapy node
 MERGE (t:Therapy { primaryid: toInteger(row.primaryid) })
