@@ -2,13 +2,32 @@
 :name: Healthcare Analytics
 :long-name: Performing analytics on healthcare data with graph
 :description: Load and analyze FDA Adverse Event Reporting System (FAERS) data with Neo4j
-:img: img
+:icon: documentation/img/healthcare-icon.svg
+:tags: Healthcare, Analytics, FDA, FAERS, Adverse, Events, Reporting, System
+:author: Chintan Desai, Neo4j
+:demodb: false
+:data: true
+:use-load-script: false
+:use-dump-file: data/healthcare-analytics-44.dump
+:zip-file: false
+:use-plugin: false
+:zip-file: false
+:target-db-version: 4.4
+:bloom-perspective: bloom/healthcare%20analytics%20perspective.json
+:guide: documentation/healthcare-analytics.adoc
 :model: documentation/img/model.svg
 :example: documentation/img/example.svg
+:rendered-guide: https://guides.neo4j.com/sandbox/{name}
+:nodes: 11381
+:relationships: 61453
 
-== {long-name}
+image::{icon}[width=100]
+
+== {long-name} 
 
 Description: _{description}_
+
+Nodes {nodes} Relationships {relationships}
 
 .Model
 image::{model}[]
@@ -16,7 +35,71 @@ image::{model}[]
 .Example
 image::{example}[]
 
-=== References
+.Example Query:
+[source,cypher,role=query-example,param-name=companyName,param-value="PFIZER",result-column=drug,expected-result="xxx"]
+----
+MATCH (m:Manufacturer { manufacturerName: $companyName })-[:REGISTERED]->(c:Case)-[:IS_PRIMARY_SUSPECT]->(d:Drug)
+RETURN c.gender as gender, c.age as age, c.ageUnit as ageUnit, d.name as drug LIMIT 5 
+----
 
-* https://en.wikipedia.org/wiki/FDA_Adverse_Event_Reporting_System[FDA Adverse Event Reporting System Wiki^]
-* https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html[FAERS Datasets^]
+=== Setup
+
+This is for Neo4j version: {target-db-version}
+
+ifeval::[{use-plugin} != false]
+Required plugins: {use-plugin}
+endif::[]
+
+ifeval::[{demodb} != false]
+The database is also available on https://demo.neo4jlabs.com:7473
+
+Username "{name}", password: "{name}", database: "{name}"
+endif::[]
+
+Rendered guide available via: `:play {rendered-guide}`
+
+Unrendered guide: link:{guide}[]
+
+Load graph data via the following:
+
+ifeval::[{data} != false]
+==== Data files: `{data}`
+
+Import flat files (csv, json, etc) using Cypher's https://neo4j.com/docs/cypher-manual/current/clauses/load-csv/[`LOAD CSV`], https://neo4j.com/labs/apoc/[APOC library], or https://neo4j.com/developer/data-import/[other methods].
+endif::[]
+
+ifeval::[{use-dump-file} != false]
+==== Dump file: `link:{use-dump-file}[]`
+
+* Drop the file into the `Files` section of a project in Neo4j Desktop. Then choose the option to `Create new DBMS from dump` option from the file options.
+
+* Use the neo4j-admin tool to load data from the command line with the command below.
+
+[source,shell,subs=attributes]
+----
+bin/neo4j-admin load --from {use-dump-file} [--database "database"]
+----
+
+* Upload the dump file to Neo4j Aura via https://console.neo4j.io/#import-instructions
+endif::[]
+
+ifeval::[{use-load-script} != false]
+==== Data load script: `{use-load-script}`
+
+[source,shell,subs=attributes]
+----
+bin/cypher-shell -u neo4j -p "password" -f {use-load-script} [-d "database"]
+----
+
+Or import in Neo4j Browser by dragging or pasting the content of {use-load-script}.
+endif::[]
+
+ifeval::[{zip-file} != false]
+==== Zip file
+
+Download the zip file link:{repo}/raw/master/{name}.zip[{name}.zip] and add it as "project from file" to https://neo4j.com/developer/neo4j-desktop[Neo4j Desktop^].
+endif::[]
+
+=== Feedback
+
+Feel free to submit issues or pull requests for improvement on this repository.
