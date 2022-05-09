@@ -1,5 +1,4 @@
-= healthcare-analytics
-:name: Healthcare Analytics
+:name: healthcare-analytics
 :long-name: Performing analytics on healthcare data with graph
 :description: Load and analyze FDA Adverse Event Reporting System (FAERS) data with Neo4j
 :icon: documentation/img/healthcare-icon.svg
