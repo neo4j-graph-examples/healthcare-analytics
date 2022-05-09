@@ -1,11 +1,17 @@
 {
     "name": "healthcare-analytics",
     "description":"Load and analyze FDA Adverse Event Reporting System data with Neo4j",
+	"icon": "documentation/img/healthcare-icon.svg",
     "dbms": [
       {
           "dumpFile": "data/healthcare-analytics-44.dump",
           "targetNeo4jVersion":"4.4.*",
-          "plugins": ["apoc"]
+          "plugins": []
+      },
+	  {
+          "dumpFile": "data/healthcare-analytics-43.dump",
+          "targetNeo4jVersion":"4.3.*",
+          "plugins": []
       }
   ]
 }
