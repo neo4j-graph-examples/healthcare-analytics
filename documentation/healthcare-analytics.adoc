@@ -11,39 +11,65 @@
 
 == Healthcare Analytics - Load and analyse FDA Adverse Event Reporting System Data with Neo4j
 
-Health care analytics is the analysis activities that can be undertaken as a result of data collected from four areas within healthcare; claims and cost data, pharmaceutical and research and development (R&D) data, clinical data (collected from electronic medical records (EHRs)), and patient behaviour and sentiment data (patient behaviours and preferences, (retail purchases e.g. data captured in running stores). Health care analytics is a growing industry, expected to grow to even more with time.
+image::{img}/healthcare-analytics.jpg[float=right,width=300px]
 
-Health care analytics allows for the examination of patterns in various healthcare data to determine how clinical care can be improved while limiting excessive spending. This can help improve the overall patient care offered in healthcare facilities.
+Health care analytics is the analysis activities that can be undertaken as a result of data collected from four areas within healthcare:
 
-Healthcare organizations can “realize new opportunities and efficiencies by leveraging the connections within their existing data: be it in a connected genome, or a provider network, or patient treatments,” said Emil Eifrem, CEO of Neo4j, in one of his statements statement summarizing the graph database company’s traction in the healthcare space. There are many companies in the market who are leveraging the potential of Neo4j Graph Database to unleash the hidden potential of the healthcare data. 
+* claims and cost data, 
+* pharmaceutical and research and development (R&D) data, 
+* clinical data (collected from electronic medical records (EHRs)),
+* and patient behaviour and sentiment data (patient behaviours and preferences, (retail purchases e.g. data captured in running stores). 
+
+Health care analytics is a growing industry, expected to grow to even more with time.
+
+Health care analytics allows for the examination of patterns in various healthcare data to determine how clinical care can be improved while limiting excessive spending. 
+This can help improve the overall patient care offered in healthcare facilities.
+
+Healthcare organizations can _"realize new opportunities and efficiencies by leveraging the connections within their existing data: be it in a connected genome, or a provider network, or patient treatments,"_ said Emil Eifrem, CEO of Neo4j, in one of his statements statement summarizing the graph database company's traction in the healthcare space. 
+There are many companies in the market who are leveraging the potential of Neo4j Graph Database to unleash the hidden potential of the healthcare data. 
 
 The connected data capabilities of a graph database can help us achieve what is either impossible or complicated with the traditional relational databases, other NoSQL databases or even big data solutions like Pig and Hive.
 
 == Demo Use Case
 
-This demonstration guide covers a similar case of healthcare data analysis with Neo4j. We are performing data ingestion and analytics of the FDA Adverse Event Reporting System Data. 
+image::{img}/fda.jpg[float="right"]
+
+This demonstration guide covers a similar case of healthcare data analysis with Neo4j. 
+
+We are performing data ingestion and analytics of the FDA Adverse Event Reporting System Data. 
 The FDA Adverse Event Reporting System (FAERS or AERS) is a computerized information database designed to support the U.S. Food and Drug Administration's (FDA) post marketing safety surveillance program for all approved drug and therapeutic biologic products. 
-The FDA uses FAERS to monitor for new adverse events and medication errors that might occur with these products. It is a system that measures occasional harms from medications to ascertain whether the risk–benefit ratio is high enough to justify continued use of any drug and to identify correctable and preventable problems in health care delivery (such as need for retraining to prevent prescribing errors).
 
-Reporting of adverse events from the point of care is voluntary in the United States. The FDA receives some adverse event and medication error reports directly from health care professionals (such as physicians, pharmacists, nurses, and others) and consumers (such as patients, family members, lawyers, and others). Health professionals and consumers may also report these events to the products’ manufacturers.
-If a manufacturer receives an adverse event report, it is required to send the report to the FDA as specified by regulations. 
+The FDA uses FAERS to monitor for new adverse events and medication errors that might occur with these products. 
+It is a system that measures occasional harms from medications to ascertain whether the risk–benefit ratio is high enough to justify continued use of any drug and to identify correctable and preventable problems in health care delivery (such as need for retraining to prevent prescribing errors).
 
-We downloaded one of the FDA FAERS datasets, massaged and articulated the demographics for United States. We perform data ingestion to prepare the FAERS graph and run a few example analytics queries to see interesting output.
+Reporting of adverse events from the point of care is voluntary in the United States. 
+The FDA receives some adverse event and medication error reports directly from health care professionals (such as physicians, pharmacists, nurses, and others) and consumers (such as patients, family members, lawyers, and others). 
+Health professionals and consumers may also report these events to the products’ manufacturers.
+If a manufacturer receives an adverse event report, they are required to send the report to the FDA as specified by regulations. 
+
+We downloaded one of the https://www.fda.gov/drugs/questions-and-answers-fdas-adverse-event-reporting-system-faers/fda-adverse-event-reporting-system-faers-public-dashboard[FDA FAERS datasets^], massaged and articulated the demographics for United States. 
+We performed data ingestion to prepare the FAERS graph and run a few example analytics queries to see interesting output.
 
 == Data Model
 
-.Model
-image::{img}/model.svg[]
+image::{img}/model.svg[width=100%]
 
-== FAERS Entities : Graph Nodes Explained
-* Demographic : Case - This is the demographic information of a person involved in the adverse event report. We identify this entity by the label 'Case' in our graph.
-* Drug : Drug - Drug involved in the adverse event. We use the same label 'Drug'. A drug can be a primary suspect, secondary suspect, concomitant or interacting drug responsible for the adverse effect. This suspect type is identified by the relationship between Case and Drug Nodes.
-* Reaction : Reaction - This is the reaction that the person (Case) developed after consumption of the respective drug, like 'Pain', '	Body temperature increased' or 'Insomnia' or 'Memory Loss' etc. We use the same label for the Node.
-* Outcome : Outcome - This is the long term outcome of the case after the adverse event, for example 'Hospitalization - Initial or Prolonged', 'Disability' or 'Death'
-* Report_Source : ReportSource - This is the reported of the adverse event, for example 'Health Professional', 'Consumer', 'User Health Facility' etc who has reported the event to FDA system. Name of the node label used to identify this entity is 'ReportSource'.
-* Therapy : Therapy - For some cases, they receive drug as a part of a therapy. This is the therapy details for the case. Same node label is used in the graph.
-* Indication : No Node - This is the medical term for drug indication that has the details like drug sequence, indication point. We have not used a separate Node label for this, instead we have covered required details as Case to Drug relationship properties.
-* Age Group Node : Demographics table in the FEARS data has age information. We have used these information and introduced a separate node for Age Group reporting. This is to generate some some age group based statistical data for adverse events.
+=== FAERS Entities : Graph Nodes Explained
+
+[cols="a,m,8a",opts="header"]
+|===
+| Entity | Label | Description
+| Demographic | Case | This is the demographic information of a person involved in the adverse event report. 
+| Drug | Drug | Drug involved in the adverse event. A drug can be a primary suspect, secondary suspect, concomitant or interacting drug responsible for the adverse effect. This suspect type is identified by the relationship between Case and Drug Nodes.
+| Reaction | Reaction | This is the reaction that the person (Case) developed after consumption of the respective drug, like 'Pain', 'Body temperature increased' or 'Insomnia' or 'Memory Loss' etc. 
+| Outcome | Outcome | This is the long term outcome of the case after the adverse event, for example 'Hospitalization: Initial or Prolonged', 'Disability' or 'Death'
+| Report_Source | ReportSource | This is the reported of the adverse event, for example 'Health Professional', 'Consumer', 'User Health Facility' etc who has reported the event to FDA system. 
+| Therapy | Therapy | For some cases, they receive drug as a part of a therapy. This is the therapy details for the case.
+| Indication | - | This is the medical term for drug indication that has the details like drug sequence, indication point. We have not used a separate Node label for this, instead we have covered required details as `Case` to `Drug` relationship properties.
+| Demographics | AgeGroup | Demographics table in the FEARS data has age information that we turned into a separate node for Age Group reporting.
+|===
+
+ifndef::env-guide[]
 
 == Preparing the schema
 
@@ -235,7 +261,9 @@ MERGE (t)-[:PRESCRIBED { drugSequence: row.drugSequence, startYear: coalesce(row
 
 We have loaded the data. Now we will be performing some analytics queries on the data.
 
-== Performing data analytics
+endif::env-guide[]
+
+== Performing data analytics - Side Effects
 
 === What are the top 5 side effects reported?
 
@@ -252,37 +280,39 @@ LIMIT 5;
 [source,cypher]
 ----
 MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]->(d:Drug)
-MATCH (c)-[:HAS_REACTION]-(r:Reaction)
+MATCH (c)-[:HAS_REACTION]->(r:Reaction)
 WITH d.name as drugName, collect(r.description) as sideEffects, count(r.description) as totalSideEffects
-RETURN drugName, sideEffects[0..5], totalSideEffects 
+RETURN drugName, sideEffects[0..5] as sideEffects, totalSideEffects 
 ORDER BY totalSideEffects DESC LIMIT 5;
 ----
 
-== Performing data analytics
+== Performing data analytics - Companies
 
 === What are the manufacturing companies which have most drugs which reported side effects?
 
 [source,cypher]
 ----
 MATCH (m:Manufacturer)-[:REGISTERED]->(c)-[:HAS_REACTION]->(r)
-WITH m.manufacturerName as company, count(r) as numberOfSideEffects
-RETURN company, numberOfSideEffects 
+RETURN m.manufacturerName as company, count(distinct r) as numberOfSideEffects
 ORDER BY numberOfSideEffects DESC LIMIT 5;
 ----
 
-=== What are the top 5 drugs from a particular company with side effects? What are the side effects from those drugs?
+=== Top 5 registered Drugs and their Side Effects
+
+* What are the top 5 drugs from a particular company with side effects? 
+*  What are the side effects from those drugs?
 
 [source,cypher]
 ----
-MATCH (m:Manufacturer {manufacturerName: "NOVARTIS"})-[:REGISTERED]->(c)
+MATCH (m:Manufacturer {manufacturerName: 'NOVARTIS'})-[:REGISTERED]->(c)
 MATCH (r:Reaction)<--(c)-[:IS_PRIMARY_SUSPECT]->(d)
-WITH d,collect(distinct r.description) AS reactions, count(r) as totalReactions
-RETURN DISTINCT(d.name) as drug, reactions[0..5] as sideEffects, totalReactions 
+WITH d.name as drug,collect(distinct r.description) AS reactions, count(distinct r) as totalReactions
+RETURN drug, reactions[0..5] as sideEffects, totalReactions 
 ORDER BY totalReactions DESC
 LIMIT 5;
 ----
 
-== Performing data analytics
+== Performing data analytics - Consumer Reports
 
 === What are the top 5 drugs which are reported directly by consumers for the side effects?
 
@@ -291,7 +321,7 @@ LIMIT 5;
 MATCH (c:Case)-[:REPORTED_BY]->(rpsr:ReportSource {name: "Consumer"})
 MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
 MATCH (c)-[:HAS_REACTION]->(r)
-WITH rpsr.name as reporter, d.name as drug, collect(r.description) as sideEffects, count(r) as total
+WITH rpsr.name as reporter, d.name as drug, collect(distinct r.description) as sideEffects, count(distinct r) as total
 RETURN drug, reporter, sideEffects[0..5] as sideEffects 
 ORDER BY total desc LIMIT 5;
 ----
@@ -303,12 +333,13 @@ ORDER BY total desc LIMIT 5;
 MATCH (c:Case)-[:RESULTED_IN]->(o:Outcome {outcome:"Death"})
 MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
 MATCH (c)-[:HAS_REACTION]->(r)
-WITH d.name as drug, collect(r.description) as sideEffects, o.outcome as outcome
-RETURN drug, sideEffects[0..5] as sideEffects, outcome 
+WITH d.name as drug, collect(distinct r.description) as sideEffects, o.outcome as outcome, count(distinct c) as cases
+RETURN drug, sideEffects[0..5] as sideEffects, outcome, cases
+ORDER BY cases DESC
 LIMIT 5;
 ----
 
-== Performing data analytics
+== Performing data analytics - Drug Combination and Case Details
 
 === Show top 10 drug combinations which have most side effects when consumed together
 
@@ -346,7 +377,7 @@ collect(distinct outcome.outcome) as outcomes
 RETURN age, gender, treatment, sideEffects, outcomes ;
 ----
 
-== Perform some more statistical analysis
+== Perform some more statistical analysis - Age Groups
 
 === What is the age group which reported highest side effects, and what are those side effects?
 
@@ -386,26 +417,15 @@ ORDER BY perc DESC
 
 == Next steps
 
-=== Full Source Code Available on GIT
-
-* https://github.com/neo4j-graph-examples/healthcare-analytics[Source Code with Cypher and data dumps^]
-
-++++
-<br>
-++++
-
-=== More code
-
-* pass:a[<a play-topic="movie-graph">Movie Graph</a> - actors & movies]
-* pass:a[<a play-topic="cypher">Cypher</a> - query language fundamentals]
-
-++++
-<br>
-++++
-
 === References
 
+* https://neo4j.com/use-cases/life-sciences/[Neo4j Life Sciences Use-Cases^]
+* https://neo4j.com/developer/life-sciences-and-healthcare/[Neo4j Healthcare Projects^]
 * https://en.wikipedia.org/wiki/Health_care_analytics[Healthcare Analytics^]
-* https://neo4j.com/news/graph-databases-impact-healthcare-sector/[Graph Databases have Impact on HealthCare Sector^]
 * https://en.wikipedia.org/wiki/FDA_Adverse_Event_Reporting_System[FDA Adverse Event Reporting System Wiki^]
 * https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html[FAERS Datasets^]
+* https://neo4j.com/video/lifesciences-workshop2021/[Neo4j Life Sciences Workshop^]
+
+=== Full Source Code Available on GitHub
+
+* https://github.com/neo4j-graph-examples/healthcare-analytics[Source Code with Cypher and data dumps^]
