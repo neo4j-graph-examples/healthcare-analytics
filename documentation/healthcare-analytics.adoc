@@ -18,7 +18,7 @@ Health care analytics is the analysis activities that can be undertaken as a res
 * claims and cost data, 
 * pharmaceutical and research and development (R&D) data, 
 * clinical data (collected from electronic medical records (EHRs)),
-* and patient behaviour and sentiment data (patient behaviours and preferences, (retail purchases e.g. data captured in running stores). 
+* and patient behavior and sentiment data (patient behaviors and preferences, (retail purchases e.g. data captured in running stores). 
 
 Health care analytics is a growing industry, expected to grow to even more with time.
 
