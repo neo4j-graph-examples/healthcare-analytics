@@ -516,8 +516,8 @@ MATCH (c)-[:HAS_REACTION]-&gt;(r)
 MATCH (c)-[:RESULTED_IN]-&gt;(o)
 WHERE d1&lt;&gt;d2
 WITH d1.name as primaryDrug, d2.name as secondaryDrug,
-collect(r.description) as sideEffects, collect(o.outcome) as outcomes
-RETURN primaryDrug, secondaryDrug, sideEffects[0..3] as sideEffects, outcomes[0]
+collect(r.description) as sideEffects, count(r.description) as totalSideEffects, collect(o.outcome) as outcomes
+RETURN primaryDrug, secondaryDrug, sideEffects[0..3] as sideEffects, totalSideEffects, outcomes[0] ORDER BY totalSideEffects desc
 LIMIT 10;<!--/code--></pre>
 </div>
 </div>
