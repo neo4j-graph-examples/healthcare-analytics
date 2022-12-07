@@ -8,6 +8,11 @@
           "dumpFile": "data/healthcare-analytics-44.dump",
           "targetNeo4jVersion":">=4.4.0 <5.0.0",
           "plugins": []
-      }
+      },
+      {
+        "dumpFile": "data/healthcare-analytics-50.dump",
+        "targetNeo4jVersion":">=5.0.0 <6.0.0",
+        "plugins": []
+    }
   ]
 }

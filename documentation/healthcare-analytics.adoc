@@ -78,13 +78,13 @@ Create constraints and indexes to prepare the schema (or model) for the graph
 [source,cypher]
 ----
 // Constraints
-CREATE CONSTRAINT constraint_drug_name IF NOT EXISTS ON (n: `Drug`) ASSERT n.`name` IS UNIQUE;
-CREATE CONSTRAINT constraint_case_primaryid IF NOT EXISTS ON (n: `Case`) ASSERT n.`primaryid` IS UNIQUE;
-CREATE CONSTRAINT constraint_reaction_description IF NOT EXISTS ON (n: `Reaction`) ASSERT n.`description` IS UNIQUE;
-CREATE CONSTRAINT constraint_reportsource_code IF NOT EXISTS ON (n: `ReportSource`) ASSERT n.`code` IS UNIQUE;
-CREATE CONSTRAINT constraint_outcome_code IF NOT EXISTS ON (n: `Outcome`) ASSERT n.`code` IS UNIQUE;
-CREATE CONSTRAINT constraint_therapy_primaryid IF NOT EXISTS ON (n: `Therapy`) ASSERT n.`primaryid` IS UNIQUE;
-CREATE CONSTRAINT constraint_manufacturer_name IF NOT EXISTS ON (n: `Manufacturer`) ASSERT n.`manufacturerName` IS UNIQUE;
+CREATE CONSTRAINT constraint_drug_name IF NOT EXISTS FOR (n: `Drug`) REQUIRE n.`name` IS UNIQUE;
+CREATE CONSTRAINT constraint_case_primaryid IF NOT EXISTS FOR (n: `Case`) REQUIRE n.`primaryid` IS UNIQUE;
+CREATE CONSTRAINT constraint_reaction_description IF NOT EXISTS FOR (n: `Reaction`) REQUIRE n.`description` IS UNIQUE;
+CREATE CONSTRAINT constraint_reportsource_code IF NOT EXISTS FOR (n: `ReportSource`) REQUIRE n.`code` IS UNIQUE;
+CREATE CONSTRAINT constraint_outcome_code IF NOT EXISTS FOR (n: `Outcome`) REQUIRE n.`code` IS UNIQUE;
+CREATE CONSTRAINT constraint_therapy_primaryid IF NOT EXISTS FOR (n: `Therapy`) REQUIRE n.`primaryid` IS UNIQUE;
+CREATE CONSTRAINT constraint_manufacturer_name IF NOT EXISTS FOR (n: `Manufacturer`) REQUIRE n.`manufacturerName` IS UNIQUE;
 
 // indexes
 CREATE INDEX index_case_age IF NOT EXISTS FOR (n: `Case`) ON (n.`age`);
@@ -200,8 +200,9 @@ RETURN count(r);
 
 [source,cypher]
 ----
-:auto USING PERIODIC COMMIT 5000 LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/drugs-indication.csv" AS row
+:auto LOAD CSV WITH HEADERS FROM "https://raw.githubusercontent.com/neo4j-graph-examples/healthcare-analytics/main/data/csv/drugs-indication.csv" AS row
 
+CALL { WITH row
 //Conditionally create Drug node
 MERGE (d:Drug { name: row.name })
 ON CREATE SET
@@ -230,7 +231,9 @@ MERGE (c)-[relate:IS_CONCOMITANT { drugSequence: row.drugSequence, route: row.ro
 FOREACH (_ IN CASE WHEN row.role = "Interacting" THEN [1] ELSE [] END |
 //Relate
 MERGE (c)-[relate:IS_INTERACTING { drugSequence: row.drugSequence, route: row.route, doseAmount: row.doseAmount, doseUnit: row.doseUnit, indication: row.indication  }]->(d)
-);
+)
+} IN TRANSACTIONS OF 5000 ROWS
+;
 ----
 
 === Load therapies and link them with cases and drugs
