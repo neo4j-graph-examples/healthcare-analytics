@@ -1,0 +1,360 @@
+== Healthcare Analytics
+:images: {img}
+:data: https://neo4j-graph-examples.github.io/healthcare-analytics/data
+
+image::{img}/healthcare-analytics.jpg[float=right,width=200px]
+
+Health care analytics allows for the examination of patterns in healthcare data to determine how clinical care can be improved. 
+
+Healthcare organizations can _"realize new opportunities and efficiencies by leveraging the connections within their existing data: be it in a connected genome, or a provider network, or patient treatments,"_.
+*Emil Eifrem, Neo4j CEO*
+
+Graph databases are a good fit for healthcare analytics due to their ability to model and query highly connected data.
+
+In this guide, you will learn:
+
+* ...
+
+In the next section, you will learn about the FDA Adverse Event Reporting System (FAERS or AERS) data.
+
+== FAERS
+
+image::{img}/fda.jpg[float="right"]
+
+The link:https://open.fda.gov/data/faers/[FDA Adverse Event Reporting System (FAERS)^] is a database that contains information on adverse event and medication error reports submitted to link:https://www.fda.gov/[FDA^].
+
+The FDA uses FAERS to monitor for new adverse events and medication errors that might occur. 
+It is a system that measures occasional harms from medications and to identify correctable and preventable problems in health care delivery.
+
+The FDA receives adverse event and medication error reports from health care professionals and consumers. 
+Health professionals and consumers may also report these events to the products’ manufacturers, who are required to report them to the FDA.
+
+Data from the https://www.fda.gov/drugs/questions-and-answers-fdas-adverse-event-reporting-system-faers/fda-adverse-event-reporting-system-faers-public-dashboard[FDA FAERS datasets^] was used to create the graph data model for this guide.
+
+In the next section, you will import the data and learn about the graph model.
+
+== FAERS Graph Model
+[role=NX_TAB_NAV,tab=import]
+pagelaunch::[]
+
+The model contains data about the cases (people), the reactions they had, the drugs they took, the outcomes, who reported the case, the therapies and the demographics.
+
+image::{img}/graph.svg[width=100%]
+
+Nodes represent:
+
+* `Cases` - information about the person involved in the adverse event report.
+* `Drug` - the drug involved in the adverse event. A drug can be a primary suspect, secondary suspect, concomitant or interacting drug responsible for the adverse effect. 
+* `Manufacturer` - the company that manufactured the drug.
+* `Reaction` - the reaction that the person developed, for example, 'Pain', 'Body temperature increased', 'Memory Loss'.
+* `Outcome` - the long term outcome of the case, for example, 'Hospitalization: Initial or Prolonged', 'Disability' or 'Death'.
+* `ReportSource` - who reported of the adverse event, for example, 'Health Professional', 'Consumer', 'User Health Facility'.
+* `Therapy` - the therapy the person was receiving when the drug was administered.
+* `AgeGroup` - the age group of the person.
+
+The relationships between the nodes represent how the `Case` relates to the other nodes. For example, the `HAS_REACTION` relationship between the `Case` and `Reaction` nodes details the reactions that a person developed after taking a drug.
+
+button::Import the FAERS dataset[role=NX_IMPORT_LOAD,endpoint={data}/healthcare-analytics-data-importer.zip]
+
+Click the highlight:import/import-run-import-button[Run import] button to import the data into Neo4j.
+
+button::Explore the data[role=NX_EXPLORE_SEARCH,search=Case HAS_REACTION Reaction]
+
+_Explore_ the data by clicking on the nodes and relationships:
+
+* Find a `Reaction` node and double click to see the `description`
+* Find a `Case` node and double click to open the details
+* Explore the _Relationships_ tab to see the relationships to other nodes
+
+[TIP]
+You can zoom in to see more detail.
+
+In the next section, you will use Cypher to query the data to identify side effects.
+
+== Side Effects
+
+Side effects are the reactions that a person develops after taking a drug.
+
+You can find the side effects using the `HAS_REACTION` relationship between the `Case` and `Reaction` nodes.
+
+.Cases and Reactions
+[source,cypher]
+----
+MATCH (c:Case)-[h:HAS_REACTION]->(r:Reaction)
+RETURN c,h,r
+----
+
+[NOTE]
+====
+The arrow button icon:ArrowIcon[] copies the query to the clipboard.
+
+The play button icon:PlayIcon[] executes the query and returns the results.
+====
+
+Run the query and observe the results.
+You should see that the number of reaction is far fewer than the number of cases and that one case can have multiple reactions.
+
+[NOTE]
+.Challenge
+====
+Can you complete this query to find `Outcome` of `Case` using the `RESULTED_IN` relationship:
+
+.Replace the `?`'s to complete the query
+[source,cypher]
+----
+MATCH (c:Case)-[?]->(o:Outcome)
+RETURN c,?,o
+----
+====
+
+[%collapsible]
+.Reveal the solution
+====
+[source,cypher]
+----
+MATCH (c:Case)-[r:RESULTED_IN]->(o:Outcome)
+RETURN c,r,o
+----
+====
+
+== Aggregating results
+
+In the previous section you use Cypher to find the reactions for each case.
+
+You can use the `count()` function to aggregate the results and find the number of cases for each reaction.
+
+.Count reactions
+[source,cypher]
+----
+MATCH (c:Case)-[:HAS_REACTION]->(r:Reaction) 
+RETURN r.description, count(c) 
+----
+
+By order the results you can see the reactions that are most common.
+
+.Top reactions
+[source,cypher]
+----
+MATCH (c:Case)-[:HAS_REACTION]->(r:Reaction) 
+RETURN r.description, count(c) 
+ORDER BY count(c) DESC
+----
+
+And by adding a limit you can see the top _n_ reactions.
+
+[source,cypher]
+----
+MATCH (c:Case)-[:HAS_REACTION]->(r:Reaction) 
+RETURN r.description, count(c) 
+ORDER BY count(c) DESC
+LIMIT 5
+----
+
+In the next section, you will create Cypher to find relationships between manufacturers, drugs and reactions.
+
+== Manufacturers, Drugs and Reactions
+
+By using the `REGISTERED` relationship you can find connections between the `Manufacturer` and the `Case` nodes
+
+.Cases by manufacturer
+[source,cypher]
+----
+MATCH (m:Manufacturer)-[:REGISTERED]->(c:Case)
+RETURN m.manufacturerName, count(c)
+ORDER BY count(c) DESC
+----
+
+Queries can match on multiple patterns. You can use the `HAS_REACTION` relationship to find the reactions for each case registered by manufacturer.
+
+.Reactions by manufacturer
+[source,cypher]
+----
+MATCH (m:Manufacturer)-[:REGISTERED]->(c:Case)-[:HAS_REACTION]->(r:Reaction)
+RETURN m.manufacturerName, count(distinct r)
+ORDER BY count(distinct r) DESC
+----
+
+GOT HERE
+
+
+=== What are the manufacturing companies which have most drugs which reported side effects?
+
+[source,cypher]
+----
+MATCH (m:Manufacturer)-[:REGISTERED]->(c:Case)-[:HAS_REACTION]->(r:Reaction)
+RETURN m.manufacturerName as company, count(distinct r) as numberOfSideEffects
+ORDER BY numberOfSideEffects DESC LIMIT 5;
+----
+
+=== Top 5 registered Drugs and their Side Effects
+
+* What are the top 5 drugs from a particular company with side effects? 
+*  What are the side effects from those drugs?
+
+[source,cypher]
+----
+MATCH (m:Manufacturer {manufacturerName: 'NOVARTIS'})-[:REGISTERED]->(c)
+MATCH (r:Reaction)<--(c)-[:IS_PRIMARY_SUSPECT]->(d)
+WITH d.name as drug,collect(distinct r.description) AS reactions, count(distinct r) as totalReactions
+RETURN drug, reactions[0..5] as sideEffects, totalReactions 
+ORDER BY totalReactions DESC
+LIMIT 5;
+----
+
+
+
+=== What are the top 5 drugs reported with side effects? Get drugs along with their side effects.
+
+[source,cypher]
+----
+MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]->(d:Drug)
+MATCH (c)-[:HAS_REACTION]->(r:Reaction)
+WITH d.name as drugName, collect(r.description) as sideEffects, count(r.description) as totalSideEffects
+RETURN drugName, sideEffects[0..5] as sideEffects, totalSideEffects 
+ORDER BY totalSideEffects DESC LIMIT 5;
+----
+
+== Performing data analytics - Companies
+
+=== What are the manufacturing companies which have most drugs which reported side effects?
+
+[source,cypher]
+----
+MATCH (m:Manufacturer)-[:REGISTERED]->(c)-[:HAS_REACTION]->(r)
+RETURN m.manufacturerName as company, count(distinct r) as numberOfSideEffects
+ORDER BY numberOfSideEffects DESC LIMIT 5;
+----
+
+=== Top 5 registered Drugs and their Side Effects
+
+* What are the top 5 drugs from a particular company with side effects? 
+*  What are the side effects from those drugs?
+
+[source,cypher]
+----
+MATCH (m:Manufacturer {manufacturerName: 'NOVARTIS'})-[:REGISTERED]->(c)
+MATCH (r:Reaction)<--(c)-[:IS_PRIMARY_SUSPECT]->(d)
+WITH d.name as drug,collect(distinct r.description) AS reactions, count(distinct r) as totalReactions
+RETURN drug, reactions[0..5] as sideEffects, totalReactions 
+ORDER BY totalReactions DESC
+LIMIT 5;
+----
+
+== Performing data analytics - Consumer Reports
+
+=== What are the top 5 drugs which are reported directly by consumers for the side effects?
+
+[source,cypher]
+----
+MATCH (c:Case)-[:REPORTED_BY]->(rpsr:ReportSource {name: "Consumer"})
+MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
+MATCH (c)-[:HAS_REACTION]->(r)
+WITH rpsr.name as reporter, d.name as drug, collect(distinct r.description) as sideEffects, count(distinct r) as total
+RETURN drug, reporter, sideEffects[0..5] as sideEffects 
+ORDER BY total desc LIMIT 5;
+----
+
+=== What are the top 5 drugs whose side effects resulted in Death of patients as an outcome?
+
+[source,cypher]
+----
+MATCH (c:Case)-[:RESULTED_IN]->(o:Outcome {outcome:"Death"})
+MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
+MATCH (c)-[:HAS_REACTION]->(r)
+WITH d.name as drug, collect(distinct r.description) as sideEffects, o.outcome as outcome, count(distinct c) as cases
+RETURN drug, sideEffects[0..5] as sideEffects, outcome, cases
+ORDER BY cases DESC
+LIMIT 5;
+----
+
+== Performing data analytics - Drug Combination and Case Details
+
+=== Show top 10 drug combinations which have most side effects when consumed together
+
+[source,cypher]
+----
+MATCH (c:Case)-[:IS_PRIMARY_SUSPECT]->(d1)
+MATCH (c:Case)-[:IS_SECONDARY_SUSPECT]->(d2)
+MATCH (c)-[:HAS_REACTION]->(r)
+MATCH (c)-[:RESULTED_IN]->(o)
+WHERE d1<>d2
+WITH d1.name as primaryDrug, d2.name as secondaryDrug,
+collect(r.description) as sideEffects, count(r.description) as totalSideEffects, collect(o.outcome) as outcomes
+RETURN primaryDrug, secondaryDrug, sideEffects[0..3] as sideEffects, totalSideEffects, outcomes[0] ORDER BY totalSideEffects desc
+LIMIT 10;
+----
+
+=== Take one of the case, and list demographics, all the drugs given, side effects and outcome for the patient.
+
+[source,cypher]
+----
+MATCH (c:Case {primaryid: 111791005})
+MATCH (c)-[consumed]->(drug:Drug)
+MATCH (c)-[:RESULTED_IN]->(outcome)
+MATCH (c)-[:HAS_REACTION]->(reaction)
+MATCH (therapy)-[prescribed:PRESCRIBED]-(drug)
+WITH distinct c.age + ' ' + c.ageUnit as age, c.gender as gender,
+collect(distinct reaction.description) as sideEffects,
+collect(
+    distinct {   drug: drug.name,
+        dose: consumed.doseAmount + ' '  + consumed.doseUnit,
+        indication: consumed.indication,
+        route: consumed.route
+    }) as treatment,
+collect(distinct outcome.outcome) as outcomes
+RETURN age, gender, treatment, sideEffects, outcomes ;
+----
+
+== Perform some more statistical analysis - Age Groups
+
+=== What is the age group which reported highest side effects, and what are those side effects?
+
+[source,cypher]
+----
+MATCH (a:AgeGroup)<-[:FALLS_UNDER]-(c:Case)
+MATCH (c)-[:HAS_REACTION]->(r)
+WITH a, collect(r.description) as sideEffects, count(r) as total
+RETURN a.ageGroup as ageGroupName, sideEffects[0..6] as sideEffects 
+ORDER BY total DESC
+LIMIT 1;
+----
+
+=== What are the highest side effects reported in Children and what are the drugs those caused these side effects?
+
+[source,cypher]
+----
+MATCH (a:AgeGroup {ageGroup:"Child"})<-[:FALLS_UNDER]-(c)
+MATCH (c)-[:HAS_REACTION]->(r)
+MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d)
+WITH distinct r.description as sideEffect, collect(distinct d.name) as drugs, count(r) as sideEffectCount
+RETURN sideEffect, drugs 
+ORDER BY sideEffectCount desc LIMIT 5;
+----
+
+=== What is the percentage wise allocation of side effects for each age group?
+
+[source,cypher]
+----
+MATCH (c:Case)-[:HAS_REACTION]->(r)
+WITH count(r) as totalReactions
+MATCH (a:AgeGroup)<-[:FALLS_UNDER]-(c)-[:HAS_REACTION]->(r)
+WITH a, count(r) as ageGroupWiseReactions, totalReactions
+RETURN a.ageGroup as ageGroupName, (ageGroupWiseReactions*100.00)/totalReactions as perc
+ORDER BY perc DESC
+----
+
+== Next steps
+
+Congratulations! You have completed the Healthcare Analytics guide.
+
+You can continue your Neo4j learning with these resources
+
+link:https://neo4j.com/graphacademy[Neo4j GraphAcademy - completely free online courses^]
+
+link:https://neo4j.com/use-cases/life-sciences/[Neo4j Life Sciences Use-Cases^]
+
+link:https://neo4j.com/developer/life-sciences-and-healthcare/[Neo4j Healthcare Projects^]
+
+link:https://neo4j.com/video/lifesciences-workshop2021/[Neo4j Life Sciences Workshop^]
+
+The full source code and data dumps for this guide is available at link:https://github.com/neo4j-graph-examples/healthcare-analytics[github.com/neo4j-graph-examples/healthcare-analytics^]
