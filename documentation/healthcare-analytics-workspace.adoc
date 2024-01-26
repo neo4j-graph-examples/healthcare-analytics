@@ -59,7 +59,7 @@ button::Import the FAERS dataset[role=NX_IMPORT_LOAD,endpoint={data}/healthcare-
 
 Click the highlight:import/import-run-import-button[Run import] button to import the data into Neo4j.
 
-button::Explore the data[role=NX_EXPLORE_SEARCH,search=Case HAS_REACTION Reaction]
+button::Explore the data[role=NX_EXPLORE_SEARCH,search=Case any Reaction]
 
 _Explore_ the data by clicking on the nodes and relationships:
 
@@ -73,7 +73,8 @@ You can zoom in to see more detail.
 In the next section, you will use Cypher to query the data to identify side effects.
 
 == Side Effects
-
+[role=NX_TAB_NAV,tab=query]
+pagelaunch::[]
 Side effects are the reactions that a person develops after taking a drug.
 
 You can find the side effects using the `HAS_REACTION` relationship between the `Case` and `Reaction` nodes.
@@ -192,7 +193,7 @@ Multiple match patterns can be used to bring additional information into the res
 In this example the `IS_PRIMARY_SUSPECT` relationship is used to find the `Drug` that is the primary suspect for the `Case`.
 
 .Which drugs resulted in the most reactions?
-[source]
+[source,cypher]
 ----
 MATCH (m:Manufacturer)-[:REGISTERED]->(c:Case)-[:HAS_REACTION]->(r:Reaction)
 MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d:Drug)
@@ -206,7 +207,7 @@ ORDER BY totalReactions DESC;
 It would be useful to get the reactions reported for each drug as well as the total number. 
 You can use the `collect()` function to return a list of reactions for each drug.
 
-[source]
+[source,cypher]
 ----
 MATCH (m:Manufacturer)-[:REGISTERED]->(c:Case)-[:HAS_REACTION]->(r:Reaction)
 MATCH (c)-[:IS_PRIMARY_SUSPECT]->(d:Drug)
