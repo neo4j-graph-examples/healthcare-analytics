@@ -6,14 +6,14 @@ image::{img}/healthcare-analytics.jpg[float=right,width=200px]
 
 Health care analytics allows for the examination of patterns in healthcare data to determine how clinical care can be improved. 
 
-Healthcare organizations can _"realize new opportunities and efficiencies by leveraging the connections within their existing data: be it in a connected genome, or a provider network, or patient treatments,"_.
-*Emil Eifrem, Neo4j CEO*
-
 Graph databases are a good fit for healthcare analytics due to their ability to model and query highly connected data.
 
 In this guide, you will learn:
 
-* ...
+* About graph databases and how they can be used for healthcare analytics
+* How to query data using the Cypher query language
+* How to aggregate data to find patterns
+* How to filter data to find specific information
 
 In the next section, you will learn about the FDA Adverse Event Reporting System (FAERS or AERS) data.
 
@@ -37,7 +37,7 @@ In the next section, you will import the data and learn about the graph model.
 [role=NX_TAB_NAV,tab=import]
 pagelaunch::[]
 
-The model contains data about the cases (people), the reactions they had, the drugs they took, the outcomes, who reported the case, the therapies and the demographics.
+The model contains data about the cases (people), the drugs they took, their reactions to the drug, the outcome, who reported the case, the therapies, and the demographics.  
 
 image::{img}/graph.svg[width=100%]
 
@@ -121,7 +121,7 @@ RETURN c,r,o
 
 == Aggregating results
 
-In the previous section you use Cypher to find the reactions for each case.
+In the previous section, you used Cypher to find the reactions for each case.
 
 You can use the `count()` function to aggregate the results and find the number of cases for each reaction.
 
@@ -132,7 +132,7 @@ MATCH (c:Case)-[:HAS_REACTION]->(r:Reaction)
 RETURN r.description, count(c) 
 ----
 
-By order the results you can see the reactions that are most common.
+By ordering the results, you can see the most common reactions.
 
 .Top reactions
 [source,cypher]
@@ -142,7 +142,7 @@ RETURN r.description, count(c)
 ORDER BY count(c) DESC
 ----
 
-And by adding a limit you can see the top _n_ reactions.
+You can see the top _n_ reactions by adding a limit.
 
 [source,cypher]
 ----
@@ -152,11 +152,11 @@ ORDER BY count(c) DESC
 LIMIT 5
 ----
 
-In the next section, you will create Cypher to find relationships between manufacturers, drugs and reactions.
+In the next section, you will write Cypher queries to find relationships between manufacturers, drugs, and reactions.  
 
 == Manufacturers, Drugs and Reactions
 
-By using the `REGISTERED` relationship you can find connections between the `Manufacturer` and the `Case` nodes
+By using the `REGISTERED` relationship, you can find connections between the `Manufacturer` and the `Case` nodes
 
 .Cases by manufacturer
 [source,cypher]
@@ -188,9 +188,9 @@ ORDER BY totalReactions DESC;
 ----
 ====
 
-Multiple match patterns can be used to bring additional information into the results.
+You can use multiple match patterns to bring additional information into the results.
 
-In this example the `IS_PRIMARY_SUSPECT` relationship is used to find the `Drug` that is the primary suspect for the `Case`.
+In this example, the query uses the `IS_PRIMARY_SUSPECT` relationship to find the `Drug` that is the primary suspect for the `Case`.
 
 .Which drugs resulted in the most reactions?
 [source,cypher]
@@ -224,11 +224,11 @@ In the next section, you will learn how to filter results.
 
 == Filtering results
 
-In the previous section you saw that the manufacturer `TAKEDA` reported that the drug `CUVITRU` had the highest number of reported reactions.
+In the previous section, you saw that the manufacturer `TAKEDA` reported that the drug `CUVITRU` had the highest number of reported reactions.
 
 You can filter the results using a filter on `MATCH` or by using a `WHERE` clause.
 
-For example, find the number of reactions registered by  the manufacturer `TAKEDA`.
+For example, find the number of reactions registered by the manufacturer `TAKEDA`.
 
 .Filter on MATCH
 [source,cypher]
@@ -375,7 +375,7 @@ RETURN a.ageGroup as ageGroupName, count(r) as total
 ORDER BY total DESC
 ----
 
-Using this data you can also look at the outcomes for each age group.
+Using this data, you can also look at the outcomes for each age group.
 For example, the following query returns the number of cases which resulted in `Death` for each age group.
 
 .Deaths by age group
@@ -387,7 +387,7 @@ RETURN a.ageGroup as ageGroupName, count(c) as total
 ORDER BY total DESC
 ----
 
-By comparing total number of reactions and the number of reactions by age group you can create a percentage of reactions for each age group.
+By comparing the total number of reactions to the number of reactions by age group, you can create a percentage of reactions for each age group.
 
 .Percentage of side effects for each age group
 [source,cypher]
@@ -400,13 +400,19 @@ RETURN a.ageGroup as ageGroupName, (ageGroupWiseReactions*100.00)/totalReactions
 ORDER BY perc DESC
 ----
 
+The total number of reactions is calculated in the first `WITH` clause and stored as `totalReactions`.
+
+The second `WITH` clause counts the number of reactions for each age group and stores it as `ageGroupWiseReactions`.
+
+The final `RETURN` clause calculates the percentage of reactions for each age group.
+
 In the next section, you will review some Cypher queries that compare drug combinations.
 
 == Drug Combination and Case Details
 
-The following queries compare drug combinations, reactions and outcomes.
+The following queries compare drug combinations, reactions, and outcomes.
 
-Review this query, try to predict the results and then run the query.
+Review this query, try to predict the results, and then run the query.
 
 [source,cypher]
 ----
@@ -429,8 +435,8 @@ By adding `[start..end]` to the end of a list you can return a subset of the ite
 For example, `sideEffects[0..3]` returns the first 3 items in the list `sideEffects` list.
 ====
 
-The following query returns details reaction, drug and outcome data for a specific case.
-Data held in the `Case` to the `Drug` and `Outcome` nodes is used to build a view of the history of a specific case.
+The following query returns details of a specific cases' reaction, drug and outcome data.
+Data from the `Case` to the `Drug` and `Outcome` nodes is used to build a view of the history of a specific case.
 
 [source,cypher]
 ----
@@ -468,4 +474,4 @@ link:https://neo4j.com/developer/life-sciences-and-healthcare/[Neo4j Healthcare 
 
 link:https://neo4j.com/video/lifesciences-workshop2021/[Neo4j Life Sciences Workshop^]
 
-The full source code and data dumps for this guide is available at link:https://github.com/neo4j-graph-examples/healthcare-analytics[github.com/neo4j-graph-examples/healthcare-analytics^]
+The source code and data dumps for this guide are available at link:https://github.com/neo4j-graph-examples/healthcare-analytics[github.com/neo4j-graph-examples/healthcare-analytics^]
