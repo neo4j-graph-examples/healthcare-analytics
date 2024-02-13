@@ -464,14 +464,14 @@ In the next section, you will find more resources to continue learning about Neo
 
 Congratulations! You have completed the Healthcare Analytics guide.
 
-You can continue your Neo4j learning with these resources
+You can continue your Neo4j learning journey with these resources:
 
-link:https://neo4j.com/graphacademy[Neo4j GraphAcademy - completely free online courses^]
+link:https://neo4j.com/graphacademy[GraphAcademy - completely free online courses^]
 
-link:https://neo4j.com/use-cases/life-sciences/[Neo4j Life Sciences Use-Cases^]
+link:https://neo4j.com/use-cases/life-sciences/[Life Sciences Use-Cases^]
 
-link:https://neo4j.com/developer/life-sciences-and-healthcare/[Neo4j Healthcare Projects^]
+link:https://neo4j.com/developer/life-sciences-and-healthcare/[Healthcare Projects^]
 
-link:https://neo4j.com/video/lifesciences-workshop2021/[Neo4j Life Sciences Workshop^]
+link:https://neo4j.com/video/lifesciences-workshop2021/[Life Sciences Workshop^]
 
-The source code and data dumps for this guide are available at link:https://github.com/neo4j-graph-examples/healthcare-analytics[github.com/neo4j-graph-examples/healthcare-analytics^]
+The source code and data dumps for this guide are available in the github repository - link:https://github.com/neo4j-graph-examples/healthcare-analytics[neo4j-graph-examples/healthcare-analytics^].
